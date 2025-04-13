@@ -2,6 +2,37 @@
 
 A web-based tool for scraping and analyzing job listings from LinkedIn, with a focus on cloud technology skills and geographic distribution.
 
+## Setup and Usage
+
+1. **Installation**
+   ```bash
+   # Clone the repository
+   git clone https://github.com/esthermu1020/Linkedin_Job_Scraper
+
+   # Move to the current directory
+   cd Linkedin
+
+   # Run the setup script
+   chmod +x run_scraper.sh
+   ./run_scraper.sh
+   ```
+
+2. **Using the Web Interface**
+   ```bash
+   # In the console, run the python file to redirect to the webpage
+   "python app.py"
+   # Open your browser and navigate to http://localhost:5001
+   http://localhost:5001
+   # read the instruction page and move to the job scraper page
+   - Enter a LinkedIn job search URL
+   - Provide your LinkedIn credentials
+   - Click "Start Scraping"
+   - If LinkedIn requires verification, complete it in the browser window
+   # view the results & analysis
+   - View and Download results when scraping is complete
+   - See the plots in the analysis tab
+   ```
+
 ## Key Features
 
 1. **Web Interface for Scraping**
@@ -51,6 +82,23 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
   - `run_with_profile.py`: Run scraper with browser profile
   - `use_profile.py`: Utilities for browser profile management
 
+## System Requirements
+
+- Python 3.6+
+- Chrome browser
+- Required Python packages (installed automatically by run_scraper.sh):
+  - flask
+  - pandas
+  - selenium
+  - webdriver-manager
+  - beautifulsoup4
+  - requests
+  - lxml
+  - plotly
+  - wordcloud
+  - matplotlib
+  
+
 ## Visualization Features
 
 1. **Jobs by Location**
@@ -81,46 +129,6 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
 2. **Rate Limiting**
    - LinkedIn may rate-limit or block scraping attempts
    - The tool implements delays and anti-detection measures, but may still be detected
-
-## Setup and Usage
-
-1. **Installation**
-   ```bash
-   # Clone the repository
-   git clone <repository-url>
-   # The project called LinkedIn, so cd to the current directory
-   cd Linkedin
-   
-   # Run the setup script
-   chmod +x run_scraper.sh
-   ./run_scraper.sh
-   ```
-
-2. **Using the Web Interface**
-   - In the console, run the "python app.py"
-   - Open your browser and navigate to http://localhost:5001
-   - Enter a LinkedIn job search URL
-   - Provide your LinkedIn credentials
-   - Click "Start Scraping"
-   - If LinkedIn requires verification, complete it in the browser window
-   - View and download results when scraping is complete
-
-
-## System Requirements
-
-- Python 3.6+
-- Chrome browser
-- Required Python packages (installed automatically by run_scraper.sh):
-  - flask
-  - pandas
-  - selenium
-  - webdriver-manager
-  - beautifulsoup4
-  - requests
-  - lxml
-  - plotly
-  - wordcloud
-  - matplotlib
 
 ## Disclaimer
 
