@@ -2,6 +2,10 @@
 
 A web-based tool for scraping and analyzing job listings from LinkedIn, with a focus on cloud technology skills and geographic distribution.
 
+![LinkedIn Job Scraper Introduction Page](example_result/Example_linkedIn_job%20scraper_introduction_page.png)
+
+*Screenshot: LinkedIn Job Scraper Introduction Page*
+
 ## Setup and Usage
 
 1. **Installation**
@@ -34,6 +38,9 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
    # view the results & analysis
    - View and Download results when scraping is complete (scroll down to the bottom to download the csv)
    - See the plots in the analysis tab
+
+   ![Results Data Table](example_result/Example_linkedIn_job%20scraper_result_page02.png)
+   *Screenshot: Example of scraped job data results*
 
 ## Key Features
 
@@ -108,6 +115,9 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
    - Helps identify geographic hotspots for job opportunities
    - Provides insights into regional demand for skills
 
+   ![Jobs by Location Chart](example_result/Example_linkedIn_job%20scraper_plot_page01.png)
+   *Screenshot: Example of location-based job distribution visualization*
+
 2. **Top Companies**
    - Bar chart displaying companies with the most job listings
    - Identifies major employers in the searched job category
@@ -120,6 +130,9 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
    - Interactive word clouds showing technical skills required by specific companies
    - Focuses on cloud provider technologies (AWS, Azure, GCP, Alibaba, Oracle)
    - Helps compare skill requirements across different employers
+
+   ![Results Page](example_result/Example_linkedIn_job%20scraper_result_page.png)
+   *Screenshot: Example of results page with data visualization*
 
 ## Known Issues
 
@@ -135,3 +148,14 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
 ## Disclaimer
 
 This tool is for research purposes only. Use of this tool may violate LinkedIn's Terms of Service. Users are responsible for ensuring their use complies with all applicable terms of service, laws, and regulations.
+## Example Results
+
+The `example_result` directory contains sample outputs from the LinkedIn Job Scraper:
+
+- `Example_linkedIn_job scraper_introduction_page.png`: The introduction page of the application
+- `Example_linkedIn_job scraper_result_page.png`: The results page with visualizations
+- `Example_linkedIn_job scraper_result_page02.png`: The data table with scraped job information
+- `Example_linkedIn_job scraper_plot_page01.png`: Location-based job distribution chart
+- `Example_linkedIn_job scraper_result_dataframe.csv`: Sample CSV output with scraped job data
+
+These examples demonstrate the capabilities of the tool and the type of data and visualizations it can produce.
