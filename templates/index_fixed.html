@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Job Scraper</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0a95ff;
+            --primary-light: #3cacff;
+            --primary-dark: #0077cc;
+            --secondary-color: #c9d1d9;
+            --text-color: #e6edf3;
+            --text-muted: #8b949e;
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --success-color: #3fb950;
+            --warning-color: #d29922;
+            --error-color: #f85149;
+            --info-color: #58a6ff;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--bg-color);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        h1 i {
+            margin-right: 10px;
+        }
+        
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        input[type="text"], 
+        input[type="number"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: all 0.3s;
+            background-color: #21262d;
+            color: var(--text-color);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button i {
+            margin-right: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--primary-light);
+        }
+        
+        .instructions {
+            background-color: #1c2128;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .instructions h2 {
+            margin-top: 0;
+            color: var(--primary-light);
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 12px;
+        }
+        
+        .note {
+            background-color: #1c2128;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid var(--warning-color);
+            color: var(--text-muted);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background-color: var(--card-bg);
+            border: none;
+            position: relative;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            background-color: #21262d;
+            color: var(--text-color);
+        }
+        
+        .tab.active {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-light);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 25px;
+            background-color: var(--card-bg);
+            border-radius: 0 0 6px 6px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .flex-container {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .flex-column {
+            flex: 1;
+        }
+        
+        @media (max-width: 992px) {
+            .flex-container {
+                flex-direction: column;
+            }
+            
+            .flex-column {
+                width: 100%;
+            }
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .close {
+            color: var(--text-muted);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: var(--text-color);
+        }
+        
+        /* Analysis styles */
+        .chart-container {
+            margin-bottom: 30px;
+            background-color: #1c2128;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .chart-title {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--info-color);
+            font-size: 18px;
+        }
+        
+        .wordcloud-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .wordcloud-img {
+            max-width: 100%;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .company-wordclouds {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .company-wordcloud {
+            background-color: #1c2128;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            overflow: hidden; /* Prevent content from overflowing */
+        }
+        
+        .company-name {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--primary-light);
+            font-size: 16px;
+        }
+    </style>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fab fa-linkedin"></i> LinkedIn Job Scraper</h1>
+        
+        <div class="tabs">
+            <div class="tab active" id="instructions-tab-btn">
+                <i class="fas fa-info-circle"></i> Instructions
+            </div>
+            <div class="tab" id="scraper-tab-btn">
+                <i class="fas fa-search"></i> Job Scraper
+            </div>
+            <div class="tab" id="results-tab-btn">
+                <i class="fas fa-chart-bar"></i> Results
+            </div>
+            <div class="tab" id="analysis-tab-btn">
+                <i class="fas fa-chart-line"></i> Analysis
+            </div>
+        </div>
+        
+        <div id="instructions-tab" class="tab-content active">
+            <div class="instructions">
+                <h2>How to Use This Tool</h2>
+                <ol>
+                    <li><strong>Find Jobs on LinkedIn:</strong> Go to LinkedIn and search for jobs using their search filters.</li>
+                    <li><strong>Copy the URL:</strong> Once you have your search results, copy the entire URL from your browser's address bar.</li>
+                    <li><strong>Paste the URL:</strong> Switch to the "Job Scraper" tab and paste the URL in the "LinkedIn Job Search URL" field.</li>
+                    <li><strong>Login to LinkedIn:</strong> Enter your LinkedIn credentials when prompted.</li>
+                    <li><strong>Configure Options:</strong> Set how many jobs you want to collect and where to start from.</li>
+                    <li><strong>Start Scraping:</strong> Click the "Start Scraping" button and monitor the progress in the log console.</li>
+                    <li><strong>View Results:</strong> After scraping completes, switch to the "Results" tab to see what was found.</li>
+                </ol>
+                
+                <div class="note">
+                    <strong>Important:</strong> This tool requires you to log in to LinkedIn. Your credentials are used only for accessing LinkedIn and are not stored.
+                </div>
+            </div>
+            
+            <div class="note">
+                <h3>Example LinkedIn Job Search URLs:</h3>
+                <p>A typical LinkedIn job search URL looks like this:</p>
+                <code>https://www.linkedin.com/jobs/search/?keywords=data%20scientist&location=United%20States</code>
+                <p>You can also use more complex URLs with company filters, experience level, etc.</p>
+            </div>
+        </div>
+        
+        <div id="scraper-tab" class="tab-content">
+            <form id="scraper-form">
+                <div class="flex-container">
+                    <div class="flex-column">
+                        <div class="form-group">
+                            <label for="search-url">LinkedIn Job Search URL:</label>
+                            <input type="text" id="search-url" name="search-url" placeholder="Paste the LinkedIn job search URL here" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="max-jobs">Maximum Number of Jobs to Collect:</label>
+                            <input type="number" id="max-jobs" name="max-jobs" min="1" value="50" placeholder="Leave blank to collect all available jobs">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="start-position">Start Position (0 = beginning):</label>
+                            <input type="number" id="start-position" name="start-position" min="0" value="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="manual-job-ids">Manual Job IDs (optional, comma separated):</label>
+                            <textarea id="manual-job-ids" name="manual-job-ids" rows="3" placeholder="e.g., 3026419284, 3191492284, 3191488681"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="button" id="login-button">
+                                <i class="fas fa-sign-in-alt"></i> Login & Start Scraping
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-column">
+                        <h3><i class="fas fa-terminal"></i> Scraping Log</h3>
+                        <div id="log-console" style="background-color: #21262d; padding: 15px; border-radius: 6px; height: 350px; overflow-y: auto; border: 1px solid var(--border-color);">
+                            <p style="margin: 0; padding: 3px 0; color: #58a6ff;">System ready. Click "Login & Start Scraping" to begin.</p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div id="results-tab" class="tab-content">
+            <h2>Scraping Results</h2>
+            <p>After scraping completes, the results will be shown here.</p>
+            
+            <div id="results-container" style="padding: 15px; background-color: #21262d; border-radius: 6px; border: 1px solid var(--border-color);">
+                <p>No results yet. Please run the scraper first.</p>
+            </div>
+            
+            <div class="form-group">
+                <button type="button" id="download-button">
+                    <i class="fas fa-download"></i> Download Results as CSV
+                </button>
+                <button type="button" id="analyze-button" style="margin-left: 10px; background-color: var(--info-color);">
+                    <i class="fas fa-chart-line"></i> Analyze Results
+                </button>
+            </div>
+        </div>
+        
+        <div id="analysis-tab" class="tab-content">
+            <h2>Job Data Analysis</h2>
+            <p>Visual analysis of the scraped job data.</p>
+            
+            <div id="analysis-loading" style="display: none; text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Generating analysis...</p>
+            </div>
+            
+            <div id="analysis-container" style="padding: 15px; background-color: #21262d; border-radius: 6px; border: 1px solid var(--border-color);">
+                <p>No analysis available. Please run the scraper and then click "Analyze Results" button.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple tab functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            function activateTab(tabId) {
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Remove active class from all tabs
+                tabs.forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Activate the selected tab
+                document.getElementById(tabId).classList.add('active');
+                
+                // Find the button that corresponds to this tab
+                const tabButton = document.getElementById(tabId + '-btn');
+                if (tabButton) {
+                    tabButton.classList.add('active');
+                }
+            }
+            
+            // Add click event listeners to tabs
+            document.getElementById('instructions-tab-btn').addEventListener('click', function() {
+                activateTab('instructions-tab');
+            });
+            
+            document.getElementById('scraper-tab-btn').addEventListener('click', function() {
+                activateTab('scraper-tab');
+            });
+            
+            document.getElementById('results-tab-btn').addEventListener('click', function() {
+                activateTab('results-tab');
+            });
+            
+            document.getElementById('analysis-tab-btn').addEventListener('click', function() {
+                activateTab('analysis-tab');
+            });
+            
+            // Add log entry function
+            function addLogEntry(message, type = 'info') {
+                const logConsole = document.getElementById('log-console');
+                const logEntry = document.createElement('p');
+                logEntry.style.margin = '0';
+                logEntry.style.padding = '3px 0';
+                
+                // Set color based on type
+                if (type === 'info') {
+                    logEntry.style.color = '#58a6ff';
+                } else if (type === 'success') {
+                    logEntry.style.color = '#3fb950';
+                } else if (type === 'error') {
+                    logEntry.style.color = '#f85149';
+                } else if (type === 'warning') {
+                    logEntry.style.color = '#d29922';
+                }
+                
+                // Add timestamp
+                const now = new Date();
+                const timestamp = now.toLocaleTimeString();
+                
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                logConsole.appendChild(logEntry);
+                
+                // Auto-scroll to bottom
+                logConsole.scrollTop = logConsole.scrollHeight;
+            }
+            
+            // Login button click handler
+            document.getElementById('login-button').addEventListener('click', function() {
+                const searchUrl = document.getElementById('search-url').value;
+                
+                if (!searchUrl) {
+                    addLogEntry('Please enter a LinkedIn job search URL', 'error');
+                    return;
+                }
+                
+                // Show the login modal
+                document.getElementById('loginModal').style.display = 'block';
+            });
+            
+            // Close button for modal
+            document.querySelector('.close').addEventListener('click', function() {
+                document.getElementById('loginModal').style.display = 'none';
+            });
+            
+            // Close modal when clicking outside of it
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('loginModal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // Start scraping button in modal
+            document.getElementById('start-scraping-button').addEventListener('click', function() {
+                const searchUrl = document.getElementById('search-url').value;
+                const linkedinEmail = document.getElementById('linkedin-email').value;
+                const linkedinPassword = document.getElementById('linkedin-password').value;
+                const maxJobs = document.getElementById('max-jobs').value;
+                const startPosition = document.getElementById('start-position').value;
+                const manualJobIds = document.getElementById('manual-job-ids').value;
+                const headless = document.getElementById('headless-mode').checked;
+                
+                if (!linkedinEmail || !linkedinPassword) {
+                    addLogEntry('LinkedIn email and password are required', 'error');
+                    return;
+                }
+                
+                // Hide the modal
+                document.getElementById('loginModal').style.display = 'none';
+                
+                // Show loading state
+                const loginButton = document.getElementById('login-button');
+                const originalButtonText = loginButton.innerHTML;
+                loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                loginButton.disabled = true;
+                
+                addLogEntry('Starting scraping process...', 'info');
+                addLogEntry(`URL: ${searchUrl}`, 'info');
+                addLogEntry(`Max jobs: ${maxJobs || 'all'}`, 'info');
+                addLogEntry(`Start position: ${startPosition}`, 'info');
+                addLogEntry(`Headless mode: ${headless ? 'enabled' : 'disabled'}`, 'info');
+                
+                // Make API call to start scraping
+                fetch('/start_scraping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        search_url: searchUrl,
+                        max_jobs: maxJobs || 'all',
+                        start_position: parseInt(startPosition) || 0,
+                        manual_job_ids: manualJobIds,
+                        linkedin_email: linkedinEmail,
+                        linkedin_password: linkedinPassword,
+                        headless: headless
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'error') {
+                        addLogEntry(`Error: ${data.message}`, 'error');
+                        loginButton.innerHTML = originalButtonText;
+                        loginButton.disabled = false;
+                    } else {
+                        addLogEntry(`${data.message}`, 'success');
+                        
+                        // Start polling for status updates - poll more frequently for more real-time logs
+                        startStatusPolling();
+                    }
+                })
+                .catch(error => {
+                    addLogEntry(`Error: ${error.message}`, 'error');
+                    loginButton.innerHTML = originalButtonText;
+                    loginButton.disabled = false;
+                });
+            });
+            
+            // Function to poll for status updates
+            function startStatusPolling() {
+                // Store the last seen log count to only append new logs
+                let lastLogCount = 0;
+                
+                const statusInterval = setInterval(() => {
+                    fetch('/api/check_status')
+                        .then(response => response.json())
+                        .then(data => {
+                            // Update logs - only append new logs instead of clearing and re-adding all
+                            if (data.logs && data.logs.length > 0) {
+                                const logConsole = document.getElementById('log-console');
+                                
+                                // If there are new logs
+                                if (data.logs.length > lastLogCount) {
+                                    // Get only the new logs
+                                    const newLogs = data.logs.slice(lastLogCount);
+                                    
+                                    // Add only new logs
+                                    newLogs.forEach(log => {
+                                        const logEntry = document.createElement('p');
+                                        logEntry.style.margin = '0';
+                                        logEntry.style.padding = '3px 0';
+                                        
+                                        // Set color based on level
+                                        if (log.level === 'info') {
+                                            logEntry.style.color = '#58a6ff';
+                                        } else if (log.level === 'success') {
+                                            logEntry.style.color = '#3fb950';
+                                        } else if (log.level === 'error') {
+                                            logEntry.style.color = '#f85149';
+                                        } else if (log.level === 'warning') {
+                                            logEntry.style.color = '#d29922';
+                                        }
+                                        
+                                        logEntry.textContent = `[${log.timestamp}] ${log.message}`;
+                                        logConsole.appendChild(logEntry);
+                                    });
+                                    
+                                    // Update the last seen log count
+                                    lastLogCount = data.logs.length;
+                                    
+                                    // Auto-scroll to bottom
+                                    logConsole.scrollTop = logConsole.scrollHeight;
+                                }
+                            }
+                            
+                            // Update results if completed
+                            if (data.status === 'completed') {
+                                clearInterval(statusInterval);
+                                
+                                // Enable the login button again
+                                const loginButton = document.getElementById('login-button');
+                                loginButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login & Start Scraping';
+                                loginButton.disabled = false;
+                                
+                                // Update results tab
+                                const resultsContainer = document.getElementById('results-container');
+                                
+                                if (data.job_count > 0 && Array.isArray(data.jobs)) {
+                                    // Create a summary
+                                    let resultsHTML = `
+                                        <h3>Scraping Summary</h3>
+                                        <p>Total jobs collected: ${data.job_count}</p>
+                                        <p>Cloud mentions:</p>
+                                        <ul>
+                                            <li>AWS: ${data.cloud_mentions.aws}</li>
+                                            <li>Azure: ${data.cloud_mentions.azure}</li>
+                                            <li>GCP: ${data.cloud_mentions.gcp}</li>
+                                            <li>Alibaba Cloud: ${data.cloud_mentions.alibaba}</li>
+                                        </ul>
+                                        <h3>Job Listings</h3>
+                                        <table style="width:100%; border-collapse: collapse;">
+                                            <thead>
+                                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                                    <th style="text-align: left; padding: 8px;">Title</th>
+                                                    <th style="text-align: left; padding: 8px;">Company</th>
+                                                    <th style="text-align: left; padding: 8px;">Location</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                    `;
+                                    
+                                    // Add each job
+                                    data.jobs.forEach(job => {
+                                        const jobUrl = job.url || '#';
+                                        resultsHTML += `
+                                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                                <td style="padding: 8px;"><a href="${jobUrl}" target="_blank" style="color: #87CEFA; text-decoration: none;">${job.title || 'N/A'}</a></td>
+                                                <td style="padding: 8px;">${job.company || 'N/A'}</td>
+                                                <td style="padding: 8px;">${job.location || 'N/A'}</td>
+                                            </tr>
+                                        `;
+                                    });
+                                    
+                                    resultsHTML += `
+                                            </tbody>
+                                        </table>
+                                    `;
+                                    
+                                    resultsContainer.innerHTML = resultsHTML;
+                                    
+                                    // Switch to results tab
+                                    activateTab('results-tab');
+                                    
+                                    // Automatically generate analysis without requiring button click
+                                    generateAnalysis();
+                                } else {
+                                    resultsContainer.innerHTML = '<p>No jobs were found matching your criteria.</p><div class="form-group"><button type="button" id="retry-button"><i class="fas fa-sync"></i> Retry Scraping</button></div>';
+                                    
+                                    // Add event listener for retry button
+                                    document.getElementById('retry-button').addEventListener('click', function() {
+                                        // Go back to the scraping tab
+                                        activateTab('scraping-tab');
+                                    });
+                                }
+                            } else if (data.status === 'error') {
+                                clearInterval(statusInterval);
+                                
+                                // Enable the login button again
+                                const loginButton = document.getElementById('login-button');
+                                loginButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login & Start Scraping';
+                                loginButton.disabled = false;
+                                
+                                addLogEntry(`Error: ${data.message}`, 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error checking status:', error);
+                        });
+                }, 500); // Poll every 500ms for more real-time logs
+            }
+            
+            // Download button click handler
+            document.getElementById('download-button').addEventListener('click', function() {
+                // Check if we have results
+                fetch('/api/check_status')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Download button clicked, status data:", data);
+                        if (data.status === 'completed' && data.job_count > 0) {
+                            // Redirect to download endpoint
+                            window.location.href = '/download_results';
+                        } else {
+                            addLogEntry('No results available for download', 'warning');
+                        }
+                    })
+                    .catch(error => {
+                        addLogEntry(`Error: ${error.message}`, 'error');
+                    });
+            });
+            
+            // Analyze button click handler
+            document.getElementById('analyze-button').addEventListener('click', function() {
+                // Switch to analysis tab first, then generate analysis
+                activateTab('analysis-tab');
+                generateAnalysis();
+            });
+            
+            // Function to generate analysis
+            function generateAnalysis() {
+                // Check if we have results
+                fetch('/api/check_status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'completed' && data.jobs && data.jobs.length > 0) {
+                            // Show loading indicator
+                            document.getElementById('analysis-loading').style.display = 'block';
+                            document.getElementById('analysis-container').innerHTML = '';
+                            
+                            // Generate analysis
+                            fetch('/api/generate_analysis')
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! Status: ${response.status}`);
+                                    }
+                                    return response.json();
+                                })
+                                .then(analysisData => {
+                                    // Hide loading indicator
+                                    document.getElementById('analysis-loading').style.display = 'none';
+                                    
+                                    if (analysisData.status === 'success') {
+                                        const data = analysisData.data;
+                                        let analysisHTML = '';
+                                        
+                                        // 1. Word frequencies for tag cloud
+                                        if (data.raw_data && data.raw_data.word_frequencies) {
+                                            analysisHTML += `
+                                                <div class="chart-container">
+                                                    <h3 class="chart-title">Jobs by Location</h3>
+                                                    <div id="location-chart" style="height: 400px; width: 100%;"></div>
+                                                </div>
+                                            `;
+                                        } else {
+                                            // No word frequency data available
+                                            analysisHTML += `
+                                                <div class="wordcloud-container">
+                                                    <h3 class="chart-title">Skills & Keywords</h3>
+                                                    <p>Word frequency data not available.</p>
+                                                </div>
+                                            `;
+                                        }
+                                        
+                                        // 2. Job count by company chart
+                                        if (Object.keys(data.job_count_by_company).length > 0) {
+                                            analysisHTML += `
+                                                <div class="chart-container">
+                                                    <h3 class="chart-title">Top Companies</h3>
+                                                    <div id="companies-chart" style="height: 300px;"></div>
+                                                </div>
+                                            `;
+                                        }
+                                        
+                                        // 3. Common skills chart
+                                        if (Object.keys(data.common_skills).length > 0) {
+                                            analysisHTML += `
+                                                <div class="chart-container">
+                                                    <h3 class="chart-title">Most In-Demand Skills</h3>
+                                                    <div id="skills-chart" style="height: 300px;"></div>
+                                                </div>
+                                            `;
+                                        }
+                                        
+                                        // 4. Company-specific word frequencies
+                                        if (data.raw_data && data.raw_data.company_word_frequencies && 
+                                            Object.keys(data.raw_data.company_word_frequencies).length > 0) {
+                                            analysisHTML += `
+                                                <h3 class="chart-title">Company-Specific Cloud Provider Skills</h3>
+                                                <div class="company-wordclouds">
+                                            `;
+                                            
+                                            for (const company of Object.keys(data.raw_data.company_word_frequencies)) {
+                                                analysisHTML += `
+                                                    <div class="company-wordcloud">
+                                                        <h4 class="company-name">${company}</h4>
+                                                        <div id="company-cloud-${company.replace(/\s+/g, '-').toLowerCase()}" 
+                                                             style="height: 300px; width: 100%; overflow: hidden;"></div>
+                                                    </div>
+                                                `;
+                                            }
+                                            
+                                            analysisHTML += `</div>`;
+                                        }
+                                        
+                                        // Update the analysis container
+                                        document.getElementById('analysis-container').innerHTML = analysisHTML;
+                                        
+                                        // Create the charts using Plotly
+                                        if (Object.keys(data.job_count_by_company).length > 0) {
+                                            // Sort data by count in descending order
+                                            const companyData = Object.entries(data.job_count_by_company)
+                                                .sort((a, b) => b[1] - a[1]);
+                                            const companies = companyData.map(item => item[0]);
+                                            const companyCounts = companyData.map(item => item[1]);
+                                            
+                                            Plotly.newPlot('companies-chart', [{
+                                                x: companies,
+                                                y: companyCounts,
+                                                type: 'bar',
+                                                marker: {
+                                                    color: '#58a6ff'
+                                                },
+                                                text: companyCounts,
+                                                textposition: 'auto',
+                                                hoverinfo: 'x+y'
+                                            }], {
+                                                paper_bgcolor: 'rgba(0,0,0,0)',
+                                                plot_bgcolor: 'rgba(0,0,0,0)',
+                                                font: {
+                                                    color: '#e6edf3'
+                                                },
+                                                margin: {
+                                                    l: 50,
+                                                    r: 50,
+                                                    b: 100,
+                                                    t: 30
+                                                },
+                                                xaxis: {
+                                                    tickangle: -45
+                                                }
+                                            });
+                                        }
+                                        
+                                        if (Object.keys(data.common_skills).length > 0) {
+                                            // Sort data by count in descending order
+                                            const skillData = Object.entries(data.common_skills)
+                                                .slice(0, 15) // Top 15 skills
+                                                .sort((a, b) => b[1] - a[1]);
+                                            const skills = skillData.map(item => item[0]);
+                                            const skillCounts = skillData.map(item => item[1]);
+                                            
+                                            Plotly.newPlot('skills-chart', [{
+                                                x: skills,
+                                                y: skillCounts,
+                                                type: 'bar',
+                                                marker: {
+                                                    color: '#3fb950'
+                                                },
+                                                text: skillCounts,
+                                                textposition: 'auto',
+                                                hoverinfo: 'x+y'
+                                            }], {
+                                                paper_bgcolor: 'rgba(0,0,0,0)',
+                                                plot_bgcolor: 'rgba(0,0,0,0)',
+                                                font: {
+                                                    color: '#e6edf3'
+                                                },
+                                                margin: {
+                                                    l: 50,
+                                                    r: 50,
+                                                    b: 100,
+                                                    t: 30
+                                                },
+                                                xaxis: {
+                                                    tickangle: -45
+                                                }
+                                            });
+                                        }
+                                        
+                                        // Create location chart
+                                        if (data.job_count_by_location && Object.keys(data.job_count_by_location).length > 0) {
+                                            // Sort data by count in descending order
+                                            const locationData = Object.entries(data.job_count_by_location)
+                                                .sort((a, b) => b[1] - a[1]);
+                                            const locations = locationData.map(item => item[0]);
+                                            const locationCounts = locationData.map(item => item[1]);
+                                            
+                                            Plotly.newPlot('location-chart', [{
+                                                x: locations,
+                                                y: locationCounts,
+                                                type: 'bar',
+                                                marker: {
+                                                    color: '#ff7b72'  // Different color from other charts
+                                                },
+                                                text: locationCounts,
+                                                textposition: 'auto',
+                                                hoverinfo: 'x+y'
+                                            }], {
+                                                paper_bgcolor: 'rgba(0,0,0,0)',
+                                                plot_bgcolor: 'rgba(0,0,0,0)',
+                                                font: {
+                                                    color: '#e6edf3'
+                                                },
+                                                margin: {
+                                                    l: 50,
+                                                    r: 50,
+                                                    b: 100,
+                                                    t: 30
+                                                },
+                                                xaxis: {
+                                                    tickangle: -45
+                                                }
+                                            });
+                                        }
+                                        
+                                        // Create company-specific word clouds - Only showing tech skills
+                                        if (data.raw_data && data.raw_data.company_word_frequencies) {
+                                            // Define tech skills to filter (same list as above)
+                                            const techSkills = [
+                                                // Programming Languages
+                                                'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'ruby', 'go', 'golang', 'php', 'scala', 'kotlin', 'swift', 'rust', 'perl',
+                                                // Web Development
+                                                'html', 'css', 'react', 'angular', 'vue', 'node', 'express', 'django', 'flask', 'spring', 'bootstrap', 'jquery', 'webpack', 'redux', 'graphql', 'rest',
+                                                // Cloud & DevOps
+                                                'aws', 'azure', 'gcp', 'cloud', 'docker', 'kubernetes', 'k8s', 'terraform', 'ansible', 'jenkins', 'cicd', 'ci/cd', 'devops', 'serverless',
+                                                // Data
+                                                'sql', 'nosql', 'mongodb', 'postgresql', 'mysql', 'oracle', 'redis', 'elasticsearch', 'cassandra', 'hadoop', 'spark', 'kafka', 'airflow',
+                                                // AI & ML
+                                                'machine', 'learning', 'ai', 'artificial', 'intelligence', 'nlp', 'tensorflow', 'pytorch', 'keras', 'scikit', 'pandas', 'numpy',
+                                                // Mobile
+                                                'android', 'ios', 'flutter', 'react-native', 'xamarin', 'mobile',
+                                                // Infrastructure
+                                                'linux', 'unix', 'windows', 'networking', 'security', 'firewall', 'vpn', 'dns', 'tcp/ip',
+                                                // Methodologies
+                                                'agile', 'scrum', 'kanban', 'tdd', 'bdd', 'microservices', 'soa', 'api',
+                                                // Tools
+                                                'git', 'github', 'gitlab', 'bitbucket', 'jira', 'confluence', 'slack', 'teams',
+                                                // Architecture
+                                                'frontend', 'backend', 'fullstack', 'architecture', 'distributed', 'scalable', 'database',
+                                                
+                                                // Alibaba specific
+                                                'alibaba', 'aliyun', 'alicloud', 'alipay', 'taobao', 'tmall', 'ant', 'dingtalk', 'feizhu', 'fliggy', 'youku',
+                                                '阿里', '阿里巴巴', '支付宝', '淘宝', '天猫', '钉钉', '飞猪', '优酷', '菜鸟', '蚂蚁', '云栖',
+                                                'odps', 'maxcompute', 'tablestore', 'opensearch', 'datav', 'dataworks', 'dataphin', 'quickbi', 'pai', 'drds',
+                                                'polardb', 'oceanbase', 'lindorm', 'hologres', 'analyticdb', 'clickhouse', 'flink', 'blink', 'realtime compute',
+                                                'oss', 'nas', 'ecs', 'sls', 'arms', 'ahas', 'acr', 'mse', 'edas', 'aone', 'arthas', 'sentinel', 'nacos',
+                                                'dubbo', 'rocketmq', 'seata', 'tair', 'tddl', 'hsf', 'eagleeye', 'antdesign', 'fusion', 'ice', 'umi', 'dva',
+                                                
+                                                // Amazon specific
+                                                'amazon', 'aws', 'ec2', 's3', 'lambda', 'dynamodb', 'rds', 'aurora', 'redshift', 'athena', 'glue', 'emr',
+                                                'sagemaker', 'comprehend', 'lex', 'polly', 'rekognition', 'textract', 'forecast', 'personalize', 'kendra',
+                                                'cloudformation', 'cloudwatch', 'cloudtrail', 'cloudfront', 'route53', 'vpc', 'iam', 'kms', 'cognito',
+                                                'guardduty', 'macie', 'inspector', 'securityhub', 'shield', 'waf', 'firewall manager', 'artifact',
+                                                'sns', 'sqs', 'mq', 'eventbridge', 'step functions', 'appsync', 'api gateway', 'amplify', 'appflow',
+                                                'kinesis', 'msk', 'quicksight', 'lake formation', 'efs', 'fsx', 'storage gateway', 'snow', 'outposts',
+                                                'eks', 'ecs', 'fargate', 'ecr', 'app runner', 'lightsail', 'elastic beanstalk', 'batch', 'codecommit',
+                                                'codebuild', 'codedeploy', 'codepipeline', 'codestar', 'x-ray', 'opsworks', 'systems manager', 'control tower',
+                                                
+                                                // Google specific
+                                                'google', 'gcp', 'google cloud', 'compute engine', 'app engine', 'cloud run', 'cloud functions', 'gke',
+                                                'bigquery', 'bigtable', 'cloud spanner', 'cloud sql', 'dataflow', 'dataproc', 'pubsub', 'cloud storage',
+                                                'firebase', 'firestore', 'cloud firestore', 'realtime database', 'cloud messaging', 'ml engine',
+                                                'tensorflow', 'vertex ai', 'dialogflow', 'cloud vision', 'cloud speech', 'cloud natural language',
+                                                'cloud translation', 'cloud video intelligence', 'cloud iot', 'cloud composer', 'datalab', 'looker',
+                                                'data studio', 'apigee', 'cloud endpoints', 'cloud identity', 'cloud kms', 'cloud armor',
+                                                'cloud cdn', 'cloud dns', 'cloud vpn', 'cloud interconnect', 'cloud load balancing', 'stackdriver',
+                                                'cloud monitoring', 'cloud logging', 'cloud trace', 'cloud profiler', 'cloud deployment manager',
+                                                'cloud build', 'container registry', 'artifact registry', 'cloud source repositories', 'android', 'chrome',
+                                                
+                                                // Microsoft specific
+                                                'microsoft', 'azure', 'windows', 'office', 'office365', 'sharepoint', 'teams', 'exchange', 'onedrive',
+                                                'azure vm', 'azure functions', 'azure app service', 'azure kubernetes service', 'aks', 'azure container instances',
+                                                'azure sql', 'cosmos db', 'azure database', 'azure storage', 'azure blob', 'azure files', 'azure table',
+                                                'azure queue', 'azure data factory', 'azure synapse', 'azure databricks', 'azure hdinsight',
+                                                'power bi', 'power apps', 'power automate', 'dynamics', 'dynamics 365', 'azure active directory',
+                                                'azure ad', 'azure key vault', 'azure security center', 'azure sentinel', 'azure monitor',
+                                                'application insights', 'azure devops', 'github actions', 'visual studio', 'vs code', '.net', 'asp.net',
+                                                'c#', 'vb.net', 'f#', 'xamarin', 'blazor', 'maui', 'azure cognitive services', 'azure machine learning',
+                                                'azure bot service', 'azure openai', 'azure virtual network', 'azure vpn', 'azure express route',
+                                                'azure front door', 'azure cdn', 'azure dns', 'azure traffic manager', 'azure api management',
+                                                'azure service bus', 'azure event grid', 'azure event hubs', 'azure logic apps', 'azure automation',
+                                                
+                                                // Oracle specific
+                                                'oracle', 'oracle cloud', 'oci', 'oracle database', 'oracle db', 'plsql', 'pl/sql', 'oracle exadata',
+                                                'oracle autonomous database', 'oracle analytics', 'oracle apex', 'oracle forms', 'oracle fusion',
+                                                'oracle ebs', 'oracle erp', 'oracle hcm', 'oracle scm', 'oracle crm', 'oracle netsuite',
+                                                'oracle retail', 'oracle hospitality', 'oracle financial services', 'oracle health sciences',
+                                                'oracle weblogic', 'oracle coherence', 'oracle goldengate', 'oracle data integrator', 'odi',
+                                                'oracle business intelligence', 'obiee', 'oracle analytics cloud', 'oracle integration cloud',
+                                                'oracle visual builder', 'oracle content management', 'oracle digital assistant', 'oracle blockchain',
+                                                'oracle identity', 'oracle access management', 'oracle cloud infrastructure', 'oracle compute',
+                                                'oracle storage', 'oracle networking', 'oracle load balancer', 'oracle dns', 'oracle fastconnect',
+                                                'oracle container engine', 'oke', 'oracle functions', 'oracle api gateway', 'oracle streaming',
+                                                'oracle nosql', 'oracle mysql', 'oracle java', 'jdk', 'graalvm', 'helidon', 'micronaut'
+                                            ];
+                                            
+                                            for (const [company, wordFreq] of Object.entries(data.raw_data.company_word_frequencies)) {
+                                                const companyId = `company-cloud-${company.replace(/\s+/g, '-').toLowerCase()}`;
+                                                
+                                                // Filter word frequencies to only include tech skills
+                                                const filteredWordFreq = {};
+                                                for (const [word, freq] of Object.entries(wordFreq)) {
+                                                    if (techSkills.includes(word.toLowerCase())) {
+                                                        filteredWordFreq[word] = freq;
+                                                    }
+                                                }
+                                                
+                                                const words = Object.keys(filteredWordFreq);
+                                                const frequencies = Object.values(filteredWordFreq);
+                                                
+                                                if (document.getElementById(companyId)) {
+                                                    // Create a scatter plot with text labels sized by frequency
+                                                    const trace = {
+                                                        x: Array(words.length).fill(0).map(() => 0.1 + Math.random() * 0.8), // Constrain to center
+                                                        y: Array(words.length).fill(0).map(() => 0.1 + Math.random() * 0.8), // Constrain to center
+                                                        mode: 'text',
+                                                        text: words,
+                                                        textfont: {
+                                                            size: frequencies.map(f => Math.min(f * 4 + 8, 32)), // Reduced max size
+                                                            color: frequencies.map(f => {
+                                                                const hue = 120 + Math.random() * 60; // green-ish
+                                                                return `hsl(${hue}, 70%, 60%)`;
+                                                            })
+                                                        }
+                                                    };
+                                                    
+                                                    Plotly.newPlot(companyId, [trace], {
+                                                        paper_bgcolor: 'rgba(0,0,0,0)',
+                                                        plot_bgcolor: 'rgba(0,0,0,0)',
+                                                        font: { color: '#e6edf3' },
+                                                        xaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [-0.1, 1.1] },
+                                                        yaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [-0.1, 1.1] },
+                                                        margin: { l: 5, r: 5, b: 5, t: 5 },
+                                                        hovermode: false,
+                                                        autosize: true
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        document.getElementById('analysis-container').innerHTML = `
+                                            <p>Error generating analysis: ${analysisData.message}</p>
+                                        `;
+                                        console.error('Analysis error from server:', analysisData.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    document.getElementById('analysis-loading').style.display = 'none';
+                                    document.getElementById('analysis-container').innerHTML = `
+                                        <p>Error: ${error.message}</p>
+                                    `;
+                                    console.error('Analysis error:', error);
+                                });
+                        } else {
+                            addLogEntry('No results available for analysis', 'warning');
+                        }
+                    })
+                    .catch(error => {
+                        addLogEntry(`Error: ${error.message}`, 'error');
+                    });
+            }
+        });
+    </script>
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2><i class="fas fa-sign-in-alt"></i> LinkedIn Login</h2>
+            <div class="form-group">
+                <label for="linkedin-email">LinkedIn Email:</label>
+                <input type="text" id="linkedin-email" name="linkedin-email" placeholder="Enter your LinkedIn email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="linkedin-password">LinkedIn Password:</label>
+                <input type="password" id="linkedin-password" name="linkedin-password" placeholder="Enter your LinkedIn password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="headless-mode">
+                    <input type="checkbox" id="headless-mode" name="headless-mode"> Run in headless mode (no browser window)
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <button type="button" id="start-scraping-button">
+                    <i class="fas fa-play"></i> Start Scraping
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
