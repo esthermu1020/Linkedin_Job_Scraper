@@ -17,21 +17,23 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
    ./run_scraper.sh
    ```
 
-2. **Using the Web Interface**
+2. **Opening the Web Interface**
    ```bash
    # In the console, run the python file to redirect to the webpage
    "python app.py"
    # Open your browser and navigate to http://localhost:5001
    http://localhost:5001
+   ```
+
+3. **Using the Web Interface**
    # read the instruction page and move to the job scraper page
    - Enter a LinkedIn job search URL
    - Provide your LinkedIn credentials
    - Click "Start Scraping"
    - If LinkedIn requires verification, complete it in the browser window
    # view the results & analysis
-   - View and Download results when scraping is complete
+   - View and Download results when scraping is complete (scroll down to the bottom to download the csv)
    - See the plots in the analysis tab
-   ```
 
 ## Key Features
 
