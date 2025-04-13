@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Job Scraper</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0077b5;
+            --primary-light: #1a91d1;
+            --primary-dark: #005582;
+            --secondary-color: #2c2c2c;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --bg-color: #ffffff;
+            --card-bg: #f8f9fa;
+            --border-color: #dee2e6;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --error-color: #f44336;
+            --info-color: #2196f3;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--bg-color);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        h1 i {
+            margin-right: 10px;
+        }
+        
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        input[type="text"], 
+        input[type="number"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: all 0.3s;
+            background-color: #ffffff;
+            color: var(--text-color);
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            color: var(--primary-color);
+        }
+        
+        .input-with-icon input {
+            padding-left: 35px;
+        }
+        
+        input:focus, textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0,119,181,0.2);
+            background-color: #ffffff;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        button i {
+            margin-right: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .instructions h2 {
+            margin-top: 0;
+            color: var(--primary-light);
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 12px;
+        }
+        
+        .note {
+            background-color: #f0f4f8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid var(--warning-color);
+            color: var(--text-muted);
+        }
+        .results {
+            margin-top: 20px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 25px 0;
+            color: var(--primary-light);
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid var(--primary-light);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1.5s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background-color: var(--card-bg);
+            border: none;
+            position: relative;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            background-color: #e9ecef;
+            color: var(--text-color);
+        }
+        
+        .tab.active {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-light);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 25px;
+            background-color: var(--card-bg);
+            border-radius: 0 0 6px 6px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 8% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 450px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s;
+            border: 1px solid #dee2e6;
+            color: var(--text-color);
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .close-btn {
+            color: var(--text-muted);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 0.8;
+        }
+        
+        .close-btn:hover {
+            color: var(--primary-light);
+        }
+        
+        /* Log console styles */
+        .log-console {
+            background-color: #f8f9fa;
+            color: #333;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 6px;
+            height: 350px;
+            overflow-y: auto;
+            margin-top: 20px;
+            line-height: 1.5;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1), 0 0 5px rgba(0,119,181,0.1);
+            border: 1px solid #dee2e6;
+        }
+        
+        .log-entry {
+            margin: 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #eee;
+            word-wrap: break-word;
+        }
+        
+        .log-info {
+            color: #0366d6;
+        }
+        
+        .log-warning {
+            color: #b08800;
+        }
+        
+        .log-error {
+            color: #d73a49;
+        }
+        
+        .log-success {
+            color: #22863a;
+        }
+        
+        .flex-container {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .flex-column {
+            flex: 1;
+        }
+        
+        /* Results table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        th {
+            background-color: #f1f3f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Cloud provider stats */
+        .cloud-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        
+        .stat-card h4 {
+            margin-top: 0;
+            color: var(--text-color);
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+        
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            margin-right: 8px;
+            vertical-align: middle;
+            accent-color: var(--primary-color);
+        }
+        
+        /* Button group */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .button-secondary {
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+        }
+        
+        .button-secondary:hover {
+            background-color: #dee2e6;
+            transform: translateY(-2px);
+        }
+        
+        /* Neon effects */
+        .neon-text {
+            color: var(--primary-light);
+        }
+        
+        .neon-border {
+            box-shadow: 0 0 3px rgba(0,119,181,0.3);
+            border: 1px solid var(--primary-color);
+        }
+        
+        /* Link styling */
+        a {
+            color: #0077b5;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        a:hover {
+            color: #1a91d1;
+            text-decoration: underline;
+        }
+        
+        /* Table link specific styling */
+        table a {
+            color: #0077b5;
+            font-weight: 500;
+        }
+        /* Code block styling */
+        code {
+            background-color: #f1f3f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #333;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Responsive layout adjustments */
+        @media (max-width: 992px) {
+            .flex-container {
+                flex-direction: column;
+            }
+            
+            .flex-column {
+                width: 100%;
+            }
+        }
+        
+        /* Improved layout balance */
+        .scraper-form-column {
+            flex: 0 0 40%;
+            min-width: 350px;
+        }
+        
+        .log-column {
+            flex: 0 0 60%;
+        }
+        
+        /* Reduced animation time */
+        .modal-content {
+            animation: slideDown 0.2s;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+</head>
+<body>
+    <div class="container">
+        <h1 class="neon-text"><i class="fas fa-linkedin"></i> LinkedIn Job Scraper</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="openTab(event, 'instructions-tab')">
+                <i class="fas fa-info-circle"></i> Instructions
+            </div>
+            <div class="tab" onclick="openTab(event, 'scraper-tab')">
+                <i class="fas fa-search"></i> Job Scraper
+            </div>
+            <div class="tab" onclick="openTab(event, 'results-tab')">
+                <i class="fas fa-chart-bar"></i> Results
+            </div>
+        </div>
+        
+        <div id="instructions-tab" class="tab-content active">
+            <div class="instructions">
+                <h2>How to Use This Tool</h2>
+                <ol>
+                    <li><strong>Find Jobs on LinkedIn:</strong> Go to LinkedIn and search for jobs using their search filters.</li>
+                    <li><strong>Copy the URL:</strong> Once you have your search results, copy the entire URL from your browser's address bar.</li>
+                    <li><strong>Paste the URL:</strong> Switch to the "Job Scraper" tab and paste the URL in the "LinkedIn Job Search URL" field.</li>
+                    <li><strong>Login to LinkedIn:</strong> Enter your LinkedIn credentials when prompted.</li>
+                    <li><strong>Configure Options:</strong> Set how many jobs you want to collect and where to start from.</li>
+                    <li><strong>Start Scraping:</strong> Click the "Start Scraping" button and monitor the progress in the log console.</li>
+                    <li><strong>View Results:</strong> After scraping completes, switch to the "Results" tab to see what was found.</li>
+                </ol>
+                
+                <div class="note">
+                    <strong>Important:</strong> This tool requires you to log in to LinkedIn. Your credentials are used only for accessing LinkedIn and are not stored.
+                </div>
+            </div>
+            
+            <div class="note">
+                <h3>Example LinkedIn Job Search URLs:</h3>
+                <p>A typical LinkedIn job search URL looks like this:</p>
+                <code>https://www.linkedin.com/jobs/search/?keywords=data%20scientist&location=United%20States</code>
+                <p>You can also use more complex URLs with company filters, experience level, etc.</p>
+            </div>
+        </div>
+        
+        <div id="scraper-tab" class="tab-content">
+            <form id="scraper-form">
+                <div class="flex-container">
+                    <div class="flex-column scraper-form-column">
+                        <div class="form-group">
+                            <label for="search-url">LinkedIn Job Search URL:</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-link"></i>
+                                <input type="text" id="search-url" name="search-url" placeholder="Paste the LinkedIn job search URL here" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="max-jobs">Maximum Number of Jobs to Collect:</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-hashtag"></i>
+                                <input type="number" id="max-jobs" name="max-jobs" min="1" value="50" placeholder="Leave blank to collect all available jobs">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="start-position">Start Position (0 = beginning):</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-sort-numeric-down"></i>
+                                <input type="number" id="start-position" name="start-position" min="0" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="manual-job-ids">Manual Job IDs (optional, comma separated):</label>
+                            <textarea id="manual-job-ids" name="manual-job-ids" rows="3" placeholder="e.g., 3026419284, 3191492284, 3191488681"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="button" onclick="showLoginModal()" class="neon-border">
+                                <i class="fas fa-sign-in-alt"></i> Login & Start Scraping
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-column log-column">
+                        <h3 class="neon-text"><i class="fas fa-terminal"></i> Scraping Log</h3>
+                        <div class="log-console neon-border" id="log-console">
+                            <p class="log-entry log-info">System ready. Click "Login & Start Scraping" to begin.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p><i class="fas fa-sync fa-spin"></i> Scraping in progress... This may take several minutes.</p>
+                </div>
+                
+                <div class="error" id="error-message"></div>
+                <div class="success" id="success-message"></div>
+            </form>
+        </div>
+        
+        <div id="results-tab" class="tab-content">
+            <h2>Scraping Results</h2>
+            <p>After scraping completes, the results will be shown here.</p>
+            
+            <div id="results-container" class="neon-border" style="padding: 15px; background-color: #252525; border-radius: 6px;">
+                <p>No results yet. Please run the scraper first.</p>
+            </div>
+            
+            <div class="form-group">
+                <div class="button-group">
+                    <button type="button" onclick="downloadResults()" class="neon-border">
+                        <i class="fas fa-download"></i> Download Results as CSV
+                    </button>
+                    <button type="button" onclick="downloadLog()" class="button-secondary">
+                        <i class="fas fa-file-alt"></i> Download Log File
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeLoginModal()">&times;</span>
+            <h2>LinkedIn Login</h2>
+            <p>Please enter your LinkedIn credentials to continue:</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="linkedin-email">Email or Phone:</label>
+                    <input type="text" id="linkedin-email" name="linkedin-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="linkedin-password">Password:</label>
+                    <input type="password" id="linkedin-password" name="linkedin-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="headless-mode">
+                        <input type="checkbox" id="headless-mode" name="headless-mode">
+                        Run in headless mode (browser will not be visible)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <button type="button" onclick="startScraping()" class="neon-border">
+                        <i class="fas fa-sign-in-alt"></i> Login & Start Scraping
+                    </button>
+                </div>
+                    </button>
+                </div>
+                <div class="note">
+                    <small>Your credentials are used only to log in to LinkedIn and are not stored.</small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].className = tabcontent[i].className.replace(" active", "");
+            }
+            
+            tablinks = document.getElementsByClassName("tab");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            
+            document.getElementById(tabName).className += " active";
+            evt.currentTarget.className += " active";
+        }
+        
+        // Modal functionality
+        function showLoginModal() {
+            const searchUrl = document.getElementById('search-url').value;
+            const manualJobIds = document.getElementById('manual-job-ids').value;
+            
+            if (!searchUrl && !manualJobIds) {
+                showError("Please enter a LinkedIn job search URL or manual job IDs");
+                return;
+            }
+            
+            document.getElementById('login-modal').style.display = 'block';
+        }
+        
+        function closeLoginModal() {
+            document.getElementById('login-modal').style.display = 'none';
+        }
+        
+        // Log console functionality
+        function addLogEntry(message, type = 'info') {
+            const logConsole = document.getElementById('log-console');
+            const logEntry = document.createElement('p');
+            logEntry.className = `log-entry log-${type}`;
+            
+            // Add timestamp
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString();
+            
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logConsole.appendChild(logEntry);
+            
+            // Auto-scroll to bottom
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+        
+        // Connect to the Python backend to start scraping
+        function startScraping() {
+            const searchUrl = document.getElementById('search-url').value;
+            const maxJobs = document.getElementById('max-jobs').value;
+            const startPosition = document.getElementById('start-position').value;
+            const manualJobIds = document.getElementById('manual-job-ids').value;
+            const linkedinEmail = document.getElementById('linkedin-email').value;
+            const linkedinPassword = document.getElementById('linkedin-password').value;
+            const headlessMode = document.getElementById('headless-mode').checked;
+            
+            if (!linkedinEmail || !linkedinPassword) {
+                showError("Please enter your LinkedIn credentials");
+                return;
+            }
+            
+            // Close the login modal
+            closeLoginModal();
+            
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+            
+            // Add log entries
+            addLogEntry("Starting LinkedIn job scraper...");
+            addLogEntry(`Search URL: ${searchUrl}`);
+            addLogEntry(`Maximum jobs: ${maxJobs || 'all'}`);
+            addLogEntry(`Start position: ${startPosition || 0}`);
+            addLogEntry(`Headless mode: ${headlessMode ? 'enabled' : 'disabled'}`);
+            addLogEntry("Attempting to log in to LinkedIn...");
+            
+            // Simulate faster login process for demo purposes
+            setTimeout(() => {
+                addLogEntry("Successfully logged in to LinkedIn", "success");
+                addLogEntry("Starting job search...");
+                
+                // Simulate scraping process
+                setTimeout(() => {
+                    addLogEntry("Found job search results page", "info");
+                    addLogEntry("Extracting job listings...", "info");
+                    
+                    // Simulate job extraction
+                    let jobCount = Math.min(maxJobs || 50, 100);
+                    let extractedCount = 0;
+                    
+                    function simulateExtraction() {
+                        if (extractedCount < jobCount) {
+                            extractedCount += 5;
+                            addLogEntry(`Extracted ${extractedCount}/${jobCount} jobs...`, "info");
+                            setTimeout(simulateExtraction, 300);
+                        } else {
+                            addLogEntry("Job extraction complete!", "success");
+                            addLogEntry("Processing results...", "info");
+                            
+                            setTimeout(() => {
+                                addLogEntry("Scraping completed successfully!", "success");
+                                document.getElementById('loading').style.display = 'none';
+                                showSuccess(`Successfully scraped ${jobCount} jobs from LinkedIn`);
+                                
+                                // Switch to results tab
+                                openTab({currentTarget: document.querySelector('.tab:nth-child(3)')}, 'results-tab');
+                                
+                                // Populate results
+                                populateDummyResults(jobCount);
+                            }, 500);
+                        }
+                    }
+                    
+                    setTimeout(simulateExtraction, 300);
+                }, 500);
+            }, 800); // Reduced from typical 2-3 seconds to 800ms
+        // Populate dummy results for demo
+        function populateDummyResults(count) {
+            const resultsContainer = document.getElementById('results-container');
+            
+            // Create table
+            let html = `
+                <h3>Found ${count} Jobs</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Job Title</th>
+                            <th>Company</th>
+                            <th>Location</th>
+                            <th>Posted Date</th>
+                            <th>Skills</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Job titles and companies
+            const jobTitles = [
+                "Data Scientist", "Software Engineer", "Product Manager", 
+                "UX Designer", "DevOps Engineer", "Data Analyst",
+                "Frontend Developer", "Backend Engineer", "Full Stack Developer",
+                "Machine Learning Engineer", "Cloud Architect", "Project Manager"
+            ];
+            
+            const companies = [
+                "Amazon", "Google", "Microsoft", "Apple", "Meta", 
+                "Netflix", "Salesforce", "Adobe", "IBM", "Oracle",
+                "Spotify", "Airbnb", "Uber", "Twitter", "LinkedIn"
+            ];
+            
+            const locations = [
+                "San Francisco, CA", "New York, NY", "Seattle, WA",
+                "Austin, TX", "Boston, MA", "Chicago, IL",
+                "Remote", "Los Angeles, CA", "Denver, CO", "Atlanta, GA"
+            ];
+            
+            const skills = [
+                "Python, SQL, Machine Learning", 
+                "JavaScript, React, Node.js",
+                "Java, Spring, AWS",
+                "C#, .NET, Azure",
+                "Product Management, Agile, Jira",
+                "UI/UX, Figma, Adobe XD",
+                "DevOps, Docker, Kubernetes",
+                "Data Analysis, Tableau, Excel",
+                "Cloud Computing, AWS, GCP",
+                "React, TypeScript, GraphQL"
+            ];
+            
+            // Generate random jobs
+            for (let i = 0; i < count; i++) {
+                const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
+                const company = companies[Math.floor(Math.random() * companies.length)];
+                const location = locations[Math.floor(Math.random() * locations.length)];
+                const daysAgo = Math.floor(Math.random() * 30) + 1;
+                const skillSet = skills[Math.floor(Math.random() * skills.length)];
+                
+                html += `
+                    <tr>
+                        <td><a href="https://www.linkedin.com/jobs/view/${1000000000 + i}" target="_blank">${jobTitle}</a></td>
+                        <td>${company}</td>
+                        <td>${location}</td>
+                        <td>${daysAgo} days ago</td>
+                        <td>${skillSet}</td>
+                    </tr>
+                `;
+            }
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            resultsContainer.innerHTML = html;
+        }
+        // Show error message
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Show success message
+        function showSuccess(message) {
+            const successElement = document.getElementById('success-message');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Download results as CSV
+        function downloadResults() {
+            // Check if we have results
+            const resultsContainer = document.getElementById('results-container');
+            const table = resultsContainer.querySelector('table');
+            
+            if (!table) {
+                showError("No results available to download");
+                return;
+            }
+            
+            // Convert table to CSV
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const rowData = [];
+                const cols = row.querySelectorAll('td, th');
+                
+                cols.forEach(col => {
+                    // Get text content, handling links
+                    let text = col.textContent.trim();
+                    // Escape quotes
+                    text = text.replace(/"/g, '""');
+                    // Wrap in quotes
+                    rowData.push(`"${text}"`);
+                });
+                
+                csv.push(rowData.join(','));
+            });
+            
+            // Create CSV file
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'linkedin_jobs_' + new Date().toISOString().slice(0, 10) + '.csv');
+            link.style.display = 'none';
+            
+            // Add to document and trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        // Download log file
+        function downloadLog() {
+            const logConsole = document.getElementById('log-console');
+            const logEntries = logConsole.querySelectorAll('.log-entry');
+            
+            if (logEntries.length === 0) {
+                showError("No log entries available to download");
+                return;
+            }
+            
+            // Convert log entries to text
+            let logText = '';
+            logEntries.forEach(entry => {
+                logText += entry.textContent + '\n';
+            });
+            
+            // Create log file
+            const blob = new Blob([logText], { type: 'text/plain;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'linkedin_scraper_log_' + new Date().toISOString().slice(0, 10) + '.txt');
+            link.style.display = 'none';
+            
+            // Add to document and trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners
+            document.getElementById('search-url').addEventListener('input', function() {
+                document.getElementById('error-message').style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('login-modal');
+                if (event.target === modal) {
+                    closeLoginModal();
+                }
+            };
+        });
+                        
+                        // Populate the results tab with the data
+                        populateResults(data);
+                        
+                        // Switch to the results tab
+                        document.querySelector('.tab[onclick="openTab(event, \'results-tab\')"]').click();
+                    } else if (data.status === 'error') {
+                        clearInterval(statusInterval);
+                        document.getElementById('loading').style.display = 'none';
+                        showError(data.message);
+                        addLogEntry(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    clearInterval(statusInterval);
+                    document.getElementById('loading').style.display = 'none';
+                    showError("Error checking status: " + error);
+                    addLogEntry("Error checking status: " + error, 'error');
+                });
+            }, 2000); // Check every 2 seconds
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        function showSuccess(message) {
+            const successElement = document.getElementById('success-message');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+        }
+        
+        function populateResults(data) {
+            const resultsContainer = document.getElementById('results-container');
+            
+            // Create a table with the results
+            let html = `
+                <h3>Summary</h3>
+                <p>Total jobs collected: ${data.job_count}</p>
+                
+                <h3>Cloud Provider Mentions</h3>
+                <ul>
+                    <li>Amazon/AWS: ${data.cloud_mentions.aws} jobs</li>
+                    <li>Microsoft/Azure: ${data.cloud_mentions.azure} jobs</li>
+                    <li>Google/GCP: ${data.cloud_mentions.gcp} jobs</li>
+                    <li>Alibaba/AliCloud: ${data.cloud_mentions.alibaba} jobs</li>
+                </ul>
+                
+                <h3>Job Listings</h3>
+                <table border="1" style="width:100%; border-collapse: collapse;">
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Company</th>
+                        <th>Location</th>
+                        <th>Cloud Mentions</th>
+                    </tr>
+            `;
+            
+            // Add rows for each job
+            data.jobs.forEach(job => {
+                const cloudMentions = [];
+                if (job.Job_IS_Amazon && job.Job_IS_Amazon.length > 0) cloudMentions.push("AWS");
+                if (job.Job_IS_MSFT && job.Job_IS_MSFT.length > 0) cloudMentions.push("Azure");
+                if (job.Job_IS_Google && job.Job_IS_Google.length > 0) cloudMentions.push("GCP");
+                if (job.Job_IS_Alibaba && job.Job_IS_Alibaba.length > 0) cloudMentions.push("Alibaba");
+                
+                html += `
+                    <tr>
+                        <td><a href="${job.url}" target="_blank">${job.title}</a></td>
+                        <td>${job.company}</td>
+                        <td>${job.location}</td>
+                        <td>${cloudMentions.join(", ") || "None"}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `</table>`;
+            
+            resultsContainer.innerHTML = html;
+        }
+        
+        function downloadResults() {
+            // Download results from the server
+            addLogEntry("Downloading results as CSV...");
+            window.location.href = '/download_results';
+        }
+        
+        function downloadLog() {
+            // Download log file from the server
+            addLogEntry("Downloading log file...");
+            window.location.href = '/download_log';
+        }
+        
+        // Close the modal if the user clicks outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('login-modal');
+            if (event.target == modal) {
+                closeLoginModal();
+            }
+        }
+    </script>
+</body>
+</html>

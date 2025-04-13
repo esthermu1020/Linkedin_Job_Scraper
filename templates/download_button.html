@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Button Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .action-button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .action-button:hover {
+            background-color: #2ea043;
+        }
+        
+        .action-button:active {
+            background-color: #238636;
+        }
+    </style>
+</head>
+<body>
+    <h1>LinkedIn Job Scraper</h1>
+    
+    <div id="results-container">
+        <h3>Scraping Summary</h3>
+        <p>Total jobs collected: 10</p>
+        <p>Cloud mentions:</p>
+        <ul>
+            <li>AWS: 5</li>
+            <li>Azure: 3</li>
+            <li>GCP: 2</li>
+            <li>Alibaba Cloud: 0</li>
+        </ul>
+        
+        <div style="margin: 20px 0;">
+            <button id="download-csv-button" class="action-button">
+                <i class="fas fa-download"></i> Download Results as CSV
+            </button>
+        </div>
+        
+        <h3>Job Listings</h3>
+        <table style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid #30363d;">
+                    <th style="text-align: left; padding: 8px;">Title</th>
+                    <th style="text-align: left; padding: 8px;">Company</th>
+                    <th style="text-align: left; padding: 8px;">Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid #30363d;">
+                    <td style="padding: 8px;"><a href="#" target="_blank" style="color: #58a6ff; text-decoration: none;">Cloud Engineer</a></td>
+                    <td style="padding: 8px;">Example Company</td>
+                    <td style="padding: 8px;">Remote</td>
+                </tr>
+                <!-- More job rows would go here -->
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        // Add event listener for download button
+        document.getElementById('download-csv-button').addEventListener('click', function() {
+            console.log("Download button clicked");
+            // In a real app, this would redirect to your download endpoint
+            alert("In the real app, this would download the CSV file");
+            // window.location.href = '/download_results';
+        });
+    </script>
+</body>
+</html>

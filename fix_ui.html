@@ -1,0 +1,15 @@
+<!-- Add this to your HTML file where you want the download button to appear -->
+<div style="margin: 20px 0;">
+    <button id="download-csv-button" class="action-button">
+        <i class="fas fa-download"></i> Download Results as CSV
+    </button>
+</div>
+
+<!-- Add this JavaScript to your existing script section -->
+<script>
+// Add event listener for download button
+document.getElementById('download-csv-button').addEventListener('click', function() {
+    console.log("Download button clicked");
+    window.location.href = '/download_results';
+});
+</script>
