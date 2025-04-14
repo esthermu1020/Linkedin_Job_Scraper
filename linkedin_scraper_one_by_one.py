@@ -255,7 +255,7 @@ def collect_job_ids_one_by_one(driver, search_url, max_jobs=float('inf'), start=
                 if len(job_ids) % 10 == 0:
                     with open("job_ids_one_by_one.txt", "w") as f:
                         for id in job_ids:
-                            f.write(f"{id}\n")
+                            f.write("{}\n".format(id))
                     logger.info(f"Saved {len(job_ids)} job IDs to job_ids_one_by_one.txt")
             else:
                 if job_id in collected_ids:
@@ -276,7 +276,7 @@ def collect_job_ids_one_by_one(driver, search_url, max_jobs=float('inf'), start=
     # Save final job IDs to file
     with open("job_ids_one_by_one.txt", "w") as f:
         for job_id in job_ids:
-            f.write(f"{job_id}\n")
+            f.write("{}\n".format(job_id))
     logger.info(f"Saved {len(job_ids)} job IDs to job_ids_one_by_one.txt")
     
     return job_ids
@@ -418,75 +418,454 @@ def get_job_details(driver, job_ids):
                     
             logger.info(f"Final job location: {location}")
             
-            # Extract job description with special handling for bullet points
-            description_parts = []
-            
-            # Try to find the main description container
-            desc_containers = []
-            for desc_selector in [".jobs-description__content", "#job-details", ".description__text", ".jobs-description-content", ".jobs-box__html-content"]:
-                try:
-                    containers = driver.find_elements(By.CSS_SELECTOR, desc_selector)
-                    if containers:
-                        desc_containers.extend(containers)
-                except:
-                    continue
-            
-            # Process each container
-            for container in desc_containers:
-                try:
-                    # Get all text elements including headers and paragraphs
-                    text_elements = container.find_elements(By.CSS_SELECTOR, "p, h1, h2, h3, h4, h5, h6")
-                    for element in text_elements:
-                        text = element.text.strip()
-                        if text:
-                            description_parts.append(text)
-                    
-                    # Get all list items (bullet points)
-                    list_items = container.find_elements(By.CSS_SELECTOR, "li, .jobs-description__bullet")
-                    for item in list_items:
-                        bullet_text = item.text.strip()
-                        if bullet_text:
-                            description_parts.append(f"• {bullet_text}")
-                    
-                    # If we found content, no need to check other containers
-                    if description_parts:
-                        logger.info(f"Found description content in container: {len(description_parts)} elements")
-                        break
-                except Exception as e:
-                    logger.warning(f"Error processing description container: {e}")
-            
-            # If we still don't have content, try to get the raw HTML and extract text
-            if not description_parts:
-                try:
-                    for container in desc_containers:
-                        html_content = container.get_attribute('innerHTML')
-                        # Use a simple approach to extract text from HTML
-                        # This is not perfect but can help in some cases
-                        text = html_content.replace('<br>', '\n').replace('<li>', '\n• ')
-                        text = re.sub(r'<[^>]+>', ' ', text)  # Remove HTML tags
-                        text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
-                        if text:
-                            description_parts.append(text)
-                            logger.info("Extracted description from HTML content")
-                            break
-                except:
-                    pass
-            
-            # If still no content, try the previous approach as fallback
-            if not description_parts:
-                for desc_selector in [".jobs-description__content", "#job-details", ".description__text"]:
+            # First, try to click all "See more" buttons to expand the content
+            try:
+                # Wait for the job description to load
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".jobs-description"))
+                )
+                
+                # Find all "See more" buttons
+                see_more_buttons = driver.find_elements(By.XPATH, "//button[contains(text(), 'See more')]")
+                see_more_spans = driver.find_elements(By.XPATH, "//span[contains(text(), 'See more')]")
+                see_more_elements = see_more_buttons + see_more_spans
+                
+                # Click each "See more" button to expand content
+                for i, button in enumerate(see_more_elements):
                     try:
-                        text = driver.find_element(By.CSS_SELECTOR, desc_selector).text.strip()
-                        if text:
-                            description_parts.append(text)
-                            logger.info("Found description using fallback selector")
-                            break
-                    except:
-                        continue
+                        logger.info(f"Clicking 'See more' button {i+1}/{len(see_more_elements)}")
+                        driver.execute_script("arguments[0].click();", button)
+                        time.sleep(0.5)  # Small delay to let content expand
+                    except Exception as e:
+                        logger.debug(f"Error clicking 'See more' button: {e}")
+                
+                # Wait a moment for all expanded content to load
+                time.sleep(1)
+                logger.info(f"Clicked {len(see_more_elements)} 'See more' buttons to expand content")
+                
+            except Exception as e:
+                logger.warning(f"Error expanding 'See more' content: {e}")
+                
+            # Extract job description with special handling for bullet points and sections
+            description_parts = []
+            responsibilities = []
+            requirements = []
             
-            # Combine all parts into a single description
-            description = "\n\n".join(description_parts) if description_parts else "Unknown Description"
-            logger.info(f"Extracted job description ({len(description)} characters)")
+            # Current section being processed
+            current_section = "general"
+            
+            # Try direct approach first - this is the most reliable for the specific job structure
+            try:
+                # Wait for the job description to load
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".jobs-description"))
+                )
+                
+                # Get the entire job description container
+                job_description = driver.find_element(By.CSS_SELECTOR, ".jobs-description")
+                
+                if job_description:
+                    # Try to find and click any remaining "See more" buttons
+                    try:
+                        # Look for "See more" buttons specifically within this container
+                        see_more_buttons = job_description.find_elements(By.XPATH, ".//button[contains(text(), 'See more')]")
+                        for button in see_more_buttons:
+                            try:
+                                logger.info("Found additional 'See more' button, clicking...")
+                                driver.execute_script("arguments[0].click();", button)
+                                time.sleep(0.5)  # Small delay to let content expand
+                            except:
+                                pass
+                    except:
+                        pass
+                        
+                    # Get the raw HTML content after expanding all sections
+                    html_content = job_description.get_attribute('innerHTML')
+                    
+                    # Clean the HTML content
+                    # 1. Replace "See more" buttons
+                    html_content = re.sub(r'<button[^>]*>See more</button>', '', html_content)
+                    html_content = re.sub(r'<span[^>]*>See more</span>', '', html_content)
+                    
+                    # 2. Replace any hidden content containers that might be duplicating content
+                    html_content = re.sub(r'<div[^>]*style="display:\s*none[^>]*>.*?</div>', '', html_content, flags=re.DOTALL)
+                    
+                    # 3. Process bullet points
+                    html_content = html_content.replace('<li>', '\n• ')
+                    html_content = html_content.replace('</li>', '')
+                    
+                    # 4. Process line breaks
+                    html_content = html_content.replace('<br>', '\n')
+                    html_content = html_content.replace('<br/>', '\n')
+                    html_content = html_content.replace('<br />', '\n')
+                    
+                    # 5. Remove all other HTML tags
+                    html_content = re.sub(r'<[^>]+>', ' ', html_content)
+                    
+                    # 6. Fix whitespace
+                    html_content = re.sub(r'\s+', ' ', html_content)
+                    
+                    # 7. Fix bullet points that might have been messed up
+                    html_content = re.sub(r'• +', '• ', html_content)
+                    
+                    # 8. Split into paragraphs and clean each paragraph
+                    paragraphs = []
+                    html_content_lines = html_content.split('\n')
+                    for paragraph in html_content_lines:
+                        paragraph = paragraph.strip()
+                        if paragraph:
+                            paragraphs.append(paragraph)
+                    
+                    # 9. Remove duplicate paragraphs while preserving order
+                    unique_paragraphs = []
+                    seen_paragraphs = set()
+                    
+                    for paragraph in paragraphs:
+                        # Skip "See more" paragraphs
+                        if paragraph.strip().lower() == "see more":
+                            continue
+                            
+                        # Normalize paragraph for comparison (remove extra spaces, lowercase)
+                        normalized = re.sub(r'\s+', ' ', paragraph.lower().strip())
+                        if normalized and normalized not in seen_paragraphs:
+                            seen_paragraphs.add(normalized)
+                            unique_paragraphs.append(paragraph)
+                    
+                    # 10. Join paragraphs with proper spacing
+                    description = '\n\n'.join(unique_paragraphs)
+                    
+                    logger.info(f"Extracted job description directly with {len(unique_paragraphs)} unique paragraphs")
+                    
+                    # Skip the rest of the extraction methods
+                    all_description_parts = [description]
+                    
+                else:
+                    logger.warning("Could not find job description container")
+                    all_description_parts = []
+                    
+            except Exception as e:
+                logger.warning(f"Error with direct extraction approach: {e}")
+                all_description_parts = []
+            
+            # If direct approach failed, try the previous methods
+            if not all_description_parts:
+                # Try to find the main description container with improved selectors
+                desc_containers = []
+                
+                # First try the specific selector mentioned in the issue
+                try:
+                    # This is the specific selector mentioned in the issue
+                    specific_selector = "body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-md.scaffold-layout--main-aside.scaffold-layout--reflow.job-view-layout.jobs-details > div > div > main > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(4)"
+                    containers = driver.find_elements(By.CSS_SELECTOR, specific_selector)
+                    if containers:
+                        logger.info(f"Found job description using the specific selector")
+                        desc_containers.extend(containers)
+                except Exception as e:
+                    logger.debug(f"Error with specific selector: {e}")
+                
+                # If specific selector didn't work, try more general selectors
+                if not desc_containers:
+                    # Try the most reliable selectors for job description
+                    for desc_selector in [
+                        ".jobs-description", 
+                        ".jobs-description__content", 
+                        ".jobs-box__html-content",
+                        ".jobs-description-content",
+                        "#job-details", 
+                        ".description__text",
+                        "[data-test-id='job-details']",
+                        ".jobs-unified-description__content",
+                        ".jobs-details__main-content"
+                    ]:
+                        try:
+                            containers = driver.find_elements(By.CSS_SELECTOR, desc_selector)
+                            if containers:
+                                logger.info(f"Found job description using selector: {desc_selector}")
+                                
+                                # Try to click any "See more" buttons in this container
+                                for container in containers:
+                                    try:
+                                        see_more_buttons = container.find_elements(By.XPATH, ".//button[contains(text(), 'See more')]")
+                                        for button in see_more_buttons:
+                                            try:
+                                                logger.info("Found 'See more' button in container, clicking...")
+                                                driver.execute_script("arguments[0].click();", button)
+                                                time.sleep(0.5)  # Small delay to let content expand
+                                            except:
+                                                pass
+                                    except:
+                                        pass
+                                
+                                desc_containers.extend(containers)
+                                break  # Use the first successful selector
+                        except Exception as e:
+                            logger.debug(f"Error with selector {desc_selector}: {e}")
+                            continue
+                
+                # Process each container
+                for container in desc_containers:
+                    try:
+                        # Get the full HTML content for section detection
+                        html_content = container.get_attribute('innerHTML')
+                        
+                        # First, try to extract structured content using XPath
+                        # This helps with properly identifying sections and bullet points
+                        
+                        # Check if this container has the job description
+                        if "About the job" in container.text or "Job details" in container.text:
+                            logger.info("Found 'About the job' section")
+                        
+                        # Process each element in the container
+                        elements = container.find_elements(By.XPATH, ".//*")
+                        
+                        # Track if we're inside a list to properly format bullet points
+                        in_list = False
+                        
+                        for element in elements:
+                            try:
+                                # Check if this is a heading or paragraph that might indicate a section
+                                tag_name = element.tag_name.lower()
+                                text = element.text.strip()
+                                
+                                # Skip "See more" buttons
+                                if text.lower() == "see more":
+                                    continue
+                                
+                                if not text:
+                                    continue
+                                    
+                                # Check if this element indicates a new section
+                                text_lower = text.lower()
+                                
+                                # Detect section headers
+                                if (tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'strong', 'b'] or 
+                                    'font-weight: bold' in element.get_attribute('style') or 
+                                    'font-weight:bold' in element.get_attribute('style')):
+                                    
+                                    # Check for responsibilities section
+                                    if any(keyword in text_lower for keyword in ['responsibilities', 'duties', 'what you\'ll do', 'job description', 'role description']):
+                                        current_section = "responsibilities"
+                                        logger.info(f"Found responsibilities section: {text}")
+                                        responsibilities.append(f"## {text}")
+                                        continue
+                                    
+                                    # Check for requirements section
+                                    elif any(keyword in text_lower for keyword in ['requirements', 'qualifications', 'what you need', 'skills', 'experience required', 'job requirements']):
+                                        current_section = "requirements"
+                                        logger.info(f"Found requirements section: {text}")
+                                        requirements.append(f"## {text}")
+                                        continue
+                                    # Other section headers reset to general
+                                    elif any(keyword in text_lower for keyword in ['about the company', 'about us', 'benefits', 'perks', 'why join', 'compensation']):
+                                        current_section = "general"
+                                
+                                # Check if we're entering or exiting a list
+                                if tag_name == 'ul' or tag_name == 'ol':
+                                    in_list = True
+                                elif tag_name == '/ul' or tag_name == '/ol':
+                                    in_list = False
+                                
+                                # Process the text based on current section
+                                if tag_name == 'li' or in_list or 'jobs-description__bullet' in element.get_attribute('class') or '•' in text or text.strip().startswith('-'):
+                                    # This is a bullet point
+                                    bullet_text = text.strip()
+                                    if bullet_text:
+                                        if current_section == "responsibilities":
+                                            responsibilities.append(f"• {bullet_text}")
+                                        elif current_section == "requirements":
+                                            requirements.append(f"• {bullet_text}")
+                                        else:
+                                            description_parts.append(f"• {bullet_text}")
+                                elif text:
+                                    # Regular text
+                                    if current_section == "responsibilities":
+                                        responsibilities.append(text)
+                                    elif current_section == "requirements":
+                                        requirements.append(text)
+                                    else:
+                                        description_parts.append(text)
+                                        
+                            except Exception as e:
+                                logger.debug(f"Error processing element: {e}")
+                                continue
+                        
+                        # If we found content, no need to check other containers
+                        if description_parts or responsibilities or requirements:
+                            logger.info(f"Found content: {len(description_parts)} general, {len(responsibilities)} responsibilities, {len(requirements)} requirements")
+                            break
+                            
+                    except Exception as e:
+                        logger.warning(f"Error processing description container: {e}")
+                
+                # If we still don't have content, try to get the raw HTML and extract text
+                if not description_parts and not responsibilities and not requirements:
+                    try:
+                        for container in desc_containers:
+                            html_content = container.get_attribute('innerHTML')
+                            
+                            # Remove "See more" buttons from HTML
+                            html_content = re.sub(r'<button[^>]*>See more</button>', '', html_content)
+                            html_content = re.sub(r'<span[^>]*>See more</span>', '', html_content)
+                            
+                            # Try to identify sections in the HTML
+                            resp_match = re.search(r'(?:<[^>]*>)*(Responsibilities|Duties|What You\'ll Do|Job Description)(?:[^<]*</[^>]*>)', html_content, re.IGNORECASE)
+                            req_match = re.search(r'(?:<[^>]*>)*(Requirements|Qualifications|What You Need|Skills Required|Basic Requirements)(?:[^<]*</[^>]*>)', html_content, re.IGNORECASE)
+                            
+                            if resp_match or req_match:
+                                # Split the HTML at these section markers
+                                sections = []
+                                last_pos = 0
+                                
+                                for match in sorted([m for m in [resp_match, req_match] if m], key=lambda x: x.start()):
+                                    sections.append(html_content[last_pos:match.start()])
+                                    last_pos = match.start()
+                                
+                                sections.append(html_content[last_pos:])
+                                
+                                # Process each section
+                                for i, section in enumerate(sections):
+                                    # Clean up the HTML
+                                    text = section.replace('<br>', '\n').replace('<li>', '\n• ')
+                                    text = re.sub(r'<[^>]+>', ' ', text)  # Remove HTML tags
+                                    text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
+                                    
+                                    if i == 0:
+                                        description_parts.append(text)
+                                    elif resp_match and i == 1:
+                                        responsibilities.append(text)
+                                    elif req_match:
+                                        requirements.append(text)
+                            else:
+                                # Use a simple approach to extract text from HTML
+                                text = html_content.replace('<br>', '\n').replace('<li>', '\n• ')
+                                text = re.sub(r'<[^>]+>', ' ', text)  # Remove HTML tags
+                                text = re.sub(r'\s+', ' ', text).strip()  # Normalize whitespace
+                                if text:
+                                    description_parts.append(text)
+                                    logger.info("Extracted description from HTML content")
+                            break
+                    except Exception as e:
+                        logger.warning(f"Error extracting from HTML: {e}")
+                
+                # If still no content, try a direct approach to get the job description
+                if not description_parts and not responsibilities and not requirements:
+                    try:
+                        # Try the specific selector from the issue directly
+                        specific_selector = "body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-md.scaffold-layout--main-aside.scaffold-layout--reflow.job-view-layout.jobs-details > div > div > main > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(4)"
+                        job_desc_element = driver.find_element(By.CSS_SELECTOR, specific_selector)
+                        
+                        if job_desc_element:
+                            logger.info("Found job description using the direct specific selector")
+                            description_parts.append(job_desc_element.text)
+                    except Exception as e:
+                        logger.debug(f"Error with direct specific selector: {e}")
+                        
+                        # Try a more general approach as last resort
+                        try:
+                            # Look for any div that might contain the job description
+                            potential_elements = driver.find_elements(By.XPATH, "//div[contains(text(), 'About the job') or contains(text(), 'Job description')]/following-sibling::div")
+                            
+                            for element in potential_elements:
+                                if len(element.text) > 100:  # Likely a description if it has substantial text
+                                    description_parts.append(element.text)
+                                    logger.info("Found job description using XPath following-sibling approach")
+                                    break
+                        except Exception as e:
+                            logger.debug(f"Error with XPath approach: {e}")
+                
+                # If still no content, try the previous approach as fallback
+                if not description_parts and not responsibilities and not requirements:
+                    for desc_selector in [".jobs-description__content", "#job-details", ".description__text"]:
+                        try:
+                            text = driver.find_element(By.CSS_SELECTOR, desc_selector).text.strip()
+                            if text:
+                                # Try to identify sections in the text
+                                lines = text.split('\n')
+                                current_section = "general"
+                                
+                                for line in lines:
+                                    line_lower = line.lower()
+                                    
+                                    # Skip "See more" buttons
+                                    if line_lower == "see more":
+                                        continue
+                                    
+                                    # Check for section headers
+                                    if any(keyword in line_lower for keyword in ['responsibilities', 'duties', 'what you\'ll do', 'job description']):
+                                        current_section = "responsibilities"
+                                        responsibilities.append(f"## {line}")
+                                    elif any(keyword in line_lower for keyword in ['requirements', 'qualifications', 'what you need', 'skills']):
+                                        current_section = "requirements"
+                                        requirements.append(f"## {line}")
+                                    elif any(keyword in line_lower for keyword in ['about the company', 'about us', 'benefits']):
+                                        current_section = "general"
+                                        description_parts.append(line)
+                                    else:
+                                        # Add content to appropriate section
+                                        if current_section == "responsibilities":
+                                            responsibilities.append(line)
+                                        elif current_section == "requirements":
+                                            requirements.append(line)
+                                        else:
+                                            description_parts.append(line)
+                                
+                                logger.info("Found description using fallback selector with section parsing")
+                                break
+                        except:
+                            continue
+                
+                # Combine all parts into a single description, including responsibilities and requirements
+                # First add general description parts
+                all_description_parts = description_parts.copy() if description_parts else []
+                
+                # Add responsibilities with proper bullet points preserved
+                if responsibilities:
+                    # Add a separator before responsibilities section if we have general description
+                    if all_description_parts:
+                        all_description_parts.append("\n\n--- RESPONSIBILITIES ---\n")
+                    all_description_parts.extend(responsibilities)
+                    
+                # Add requirements with proper bullet points preserved
+                if requirements:
+                    # Add a separator before requirements section
+                    if all_description_parts:
+                        all_description_parts.append("\n\n--- REQUIREMENTS ---\n")
+                    all_description_parts.extend(requirements)
+            
+            # Join all parts into a single description, preserving the original order
+            if all_description_parts:
+                # Join with proper spacing
+                description = "\n\n".join(all_description_parts)
+                
+                # Remove any "See more" buttons that might have been captured
+                description = re.sub(r'(?:^|\n)See more(?:\n|$)', '\n', description)
+                
+                # Remove duplicate paragraphs that might have been captured
+                unique_paragraphs = []
+                seen_paragraphs = set()
+                
+                for paragraph in description.split("\n\n"):
+                    # Skip empty paragraphs
+                    if not paragraph.strip():
+                        continue
+                        
+                    # Skip "See more" paragraphs
+                    if paragraph.strip().lower() == "see more":
+                        continue
+                    
+                    # Normalize paragraph for comparison (remove extra spaces, lowercase)
+                    normalized = re.sub(r'\s+', ' ', paragraph.lower().strip())
+                    if normalized and normalized not in seen_paragraphs:
+                        seen_paragraphs.add(normalized)
+                        unique_paragraphs.append(paragraph)
+                
+                # Reconstruct the description with unique paragraphs
+                description = "\n\n".join(unique_paragraphs)
+            else:
+                description = "Unknown Description"
+            
+            logger.info(f"Extracted complete job description ({len(description)} characters)")
+            logger.info("Description contains {} paragraphs".format(description.count('\n\n') + 1))
             
             # Check for mentions of cloud providers
             job_is_amazon = []
@@ -495,8 +874,10 @@ def get_job_details(driver, job_ids):
             job_is_alibaba = []
             
             # Process each sentence in the description
-            for sentence in description.split('\n'):
-                if 'aws' in sentence.lower() or 'amazon' in sentence.lower():
+            sentences = description.split('\n')
+            for sentence in sentences:
+                # For Amazon/AWS, exclude sentences that contain "laws" to avoid false positives
+                if ('aws' in sentence.lower() or 'amazon' in sentence.lower()) and 'laws' not in sentence.lower():
                     job_is_amazon.append(sentence)
                 if 'azure' in sentence.lower() or 'microsoft' in sentence.lower():
                     job_is_msft.append(sentence)
