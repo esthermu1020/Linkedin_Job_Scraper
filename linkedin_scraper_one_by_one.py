@@ -877,6 +877,7 @@ def get_job_details(driver, job_ids):
             sentences = description.split('\n')
             for sentence in sentences:
                 # For Amazon/AWS, exclude sentences that contain "laws" to avoid false positives
+<<<<<<< HEAD
                 # Check for AWS/Amazon cloud services - using more specific matching
                 sentence_lower = sentence.lower()
                 words = re.findall(r'\b\w+\b', sentence_lower)
@@ -892,6 +893,11 @@ def get_job_details(driver, job_ids):
                 
                 # Check for Azure cloud services - more specific matching
                 if 'azure' in words or 'microsoft azure' in sentence_lower:
+=======
+                if ('aws' in sentence.lower() or 'amazon' in sentence.lower()) and 'laws' not in sentence.lower():
+                    job_is_amazon.append(sentence)
+                if 'azure' in sentence.lower() or 'microsoft' in sentence.lower():
+>>>>>>> 3e5e43268b990fb05fba7b8a6e4a70c4fead79b8
                     job_is_msft.append(sentence)
                 else:
                     # Check for Azure specific services with better context
