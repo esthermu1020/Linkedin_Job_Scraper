@@ -575,7 +575,7 @@
                         
                         <div class="form-group">
                             <button type="button" onclick="showLoginModal()" class="neon-border">
-                                <i class="fas fa-sign-in-alt"></i> Login & Start Scraping
+                                <i class="fas fa-play-circle"></i> Launch Scraper
                             </button>
                         </div>
                     </div>
@@ -623,34 +623,16 @@
     <div id="login-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeLoginModal()">&times;</span>
-            <h2>LinkedIn Login</h2>
-            <p>Please enter your LinkedIn credentials to continue:</p>
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="linkedin-email">Email or Phone:</label>
-                    <input type="text" id="linkedin-email" name="linkedin-email" required>
-                </div>
-                <div class="form-group">
-                    <label for="linkedin-password">Password:</label>
-                    <input type="password" id="linkedin-password" name="linkedin-password" required>
-                </div>
-                <div class="form-group">
-                    <label for="headless-mode">
-                        <input type="checkbox" id="headless-mode" name="headless-mode">
-                        Run in headless mode (browser will not be visible)
-                    </label>
-                </div>
-                <div class="form-group">
-                    <button type="button" onclick="startScraping()" class="neon-border">
-                        <i class="fas fa-sign-in-alt"></i> Login & Start Scraping
-                    </button>
-                </div>
-                    </button>
-                </div>
-                <div class="note">
-                    <small>Your credentials are used only to log in to LinkedIn and are not stored.</small>
-                </div>
-            </form>
+            <h2>Start LinkedIn Scraper</h2>
+            <p>A browser window will open automatically. Please log in to LinkedIn in that window when prompted.</p>
+            <div class="form-group">
+                <button type="button" onclick="startScraping()" class="neon-border">
+                    <i class="fas fa-play-circle"></i> Launch Scraper
+                </button>
+            </div>
+            <div class="note">
+                <small>You will need to log in to LinkedIn in the browser window that opens. No credentials are required here.</small>
+            </div>
         </div>
     </div>
 
@@ -713,14 +695,6 @@
             const maxJobs = document.getElementById('max-jobs').value;
             const startPosition = document.getElementById('start-position').value;
             const manualJobIds = document.getElementById('manual-job-ids').value;
-            const linkedinEmail = document.getElementById('linkedin-email').value;
-            const linkedinPassword = document.getElementById('linkedin-password').value;
-            const headlessMode = document.getElementById('headless-mode').checked;
-            
-            if (!linkedinEmail || !linkedinPassword) {
-                showError("Please enter your LinkedIn credentials");
-                return;
-            }
             
             // Close the login modal
             closeLoginModal();
@@ -735,8 +709,41 @@
             addLogEntry(`Search URL: ${searchUrl}`);
             addLogEntry(`Maximum jobs: ${maxJobs || 'all'}`);
             addLogEntry(`Start position: ${startPosition || 0}`);
-            addLogEntry(`Headless mode: ${headlessMode ? 'enabled' : 'disabled'}`);
-            addLogEntry("Attempting to log in to LinkedIn...");
+            addLogEntry("A browser window will open. Please log in to LinkedIn when prompted.");
+            
+            // Send request to start scraping
+            fetch('/start_scraping', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    search_url: searchUrl,
+                    max_jobs: maxJobs || 'all',
+                    start_position: startPosition || 0,
+                    manual_job_ids: manualJobIds
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addLogEntry("Scraping job started successfully", "success");
+                    addLogEntry("Checking status periodically...");
+                    
+                    // Start checking status periodically
+                    checkStatus();
+                } else {
+                    document.getElementById('loading').style.display = 'none';
+                    showError(data.message);
+                    addLogEntry(data.message, "error");
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                showError("Error starting scraping: " + error);
+                addLogEntry("Error starting scraping: " + error, "error");
+            });
+        }
             
             // Simulate faster login process for demo purposes
             setTimeout(() => {

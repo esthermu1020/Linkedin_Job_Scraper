@@ -316,14 +316,14 @@
                     <li><strong>Find Jobs on LinkedIn:</strong> Go to LinkedIn and search for jobs using their search filters.</li>
                     <li><strong>Copy the URL:</strong> Once you have your search results, copy the entire URL from your browser's address bar.</li>
                     <li><strong>Paste the URL:</strong> Switch to the "Job Scraper" tab and paste the URL in the "LinkedIn Job Search URL" field.</li>
-                    <li><strong>Login to LinkedIn:</strong> Enter your LinkedIn credentials when prompted.</li>
+                    <li><strong>Start Scraping:</strong> Click the "Login & Start Scraping" button. A browser window will open for you to manually log in to LinkedIn.</li>
                     <li><strong>Configure Options:</strong> Set how many jobs you want to collect and where to start from.</li>
-                    <li><strong>Start Scraping:</strong> Click the "Start Scraping" button and monitor the progress in the log console.</li>
+                    <li><strong>Monitor Progress:</strong> Watch the progress in the log console as the tool collects job information.</li>
                     <li><strong>View Results:</strong> After scraping completes, switch to the "Results" tab to see what was found.</li>
                 </ol>
                 
                 <div class="note">
-                    <strong>Important:</strong> This tool requires you to log in to LinkedIn. Your credentials are used only for accessing LinkedIn and are not stored.
+                    <strong>Important:</strong> This tool requires you to log in to LinkedIn manually in the browser window that opens.
                 </div>
             </div>
             
@@ -512,17 +512,11 @@
             // Start scraping button in modal
             document.getElementById('start-scraping-button').addEventListener('click', function() {
                 const searchUrl = document.getElementById('search-url').value;
-                const linkedinEmail = document.getElementById('linkedin-email').value;
-                const linkedinPassword = document.getElementById('linkedin-password').value;
                 const maxJobs = document.getElementById('max-jobs').value;
                 const startPosition = document.getElementById('start-position').value;
                 const manualJobIds = document.getElementById('manual-job-ids').value;
-                const headless = document.getElementById('headless-mode').checked;
-                
-                if (!linkedinEmail || !linkedinPassword) {
-                    addLogEntry('LinkedIn email and password are required', 'error');
-                    return;
-                }
+                // Always use non-headless mode so user can manually login
+                const headless = false;
                 
                 // Hide the modal
                 document.getElementById('loginModal').style.display = 'none';
@@ -550,9 +544,7 @@
                         max_jobs: maxJobs || 'all',
                         start_position: parseInt(startPosition) || 0,
                         manual_job_ids: manualJobIds,
-                        linkedin_email: linkedinEmail,
-                        linkedin_password: linkedinPassword,
-                        headless: headless
+                        headless: false // Always use non-headless mode for manual login
                     }),
                 })
                 .then(response => response.json())
@@ -1083,20 +1075,10 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2><i class="fas fa-sign-in-alt"></i> LinkedIn Login</h2>
-            <div class="form-group">
-                <label for="linkedin-email">LinkedIn Email:</label>
-                <input type="text" id="linkedin-email" name="linkedin-email" placeholder="Enter your LinkedIn email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="linkedin-password">LinkedIn Password:</label>
-                <input type="password" id="linkedin-password" name="linkedin-password" placeholder="Enter your LinkedIn password" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="headless-mode">
-                    <input type="checkbox" id="headless-mode" name="headless-mode"> Run in headless mode (no browser window)
-                </label>
+            <div class="instructions">
+                <p>A browser window will open for you to manually log in to LinkedIn.</p>
+                <p>Please complete the login process in the browser window that appears.</p>
+                <p><strong>Note:</strong> Your LinkedIn credentials are entered directly in the browser, not in this application.</p>
             </div>
             
             <div class="form-group">

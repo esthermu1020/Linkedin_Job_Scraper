@@ -314,12 +314,10 @@ def login_to_linkedin(driver, email, password):
 class LinkedInConnector:
     """Class to connect the LinkedIn scraper with the web interface"""
     
-    def __init__(self, search_url='', max_jobs=10, username='', password='', log_file=None, headless=False):
+    def __init__(self, search_url='', max_jobs=10, log_file=None, headless=False):
         """Initialize the connector with the given parameters"""
         self.search_url = search_url
         self.max_jobs = max_jobs
-        self.username = username
-        self.password = password
         self.log_file = log_file
         self.headless = headless
     
@@ -328,8 +326,6 @@ class LinkedInConnector:
         return run_scraper(
             search_url=self.search_url,
             max_jobs=self.max_jobs,
-            linkedin_email=self.username,
-            linkedin_password=self.password,
             headless=self.headless
         )
     
@@ -613,7 +609,7 @@ def run_scraper(search_url, max_jobs='all', start_position=0, manual_job_ids='',
             
             add_log(f"📊 Cloud provider analysis results:")
             add_log(f"- AWS/Amazon: {results['cloud_mentions']['aws']} jobs")
-            add_log(f"- Azure/Microsoft: {results['cloud_mentions']['azure']} jobs")
+            add_log(f"- Azure: {results['cloud_mentions']['azure']} jobs")
             add_log(f"- GCP/Google: {results['cloud_mentions']['gcp']} jobs")
             add_log(f"- Alibaba Cloud: {results['cloud_mentions']['alibaba']} jobs")
             

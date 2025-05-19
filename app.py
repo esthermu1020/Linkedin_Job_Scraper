@@ -83,18 +83,18 @@ def start_scraping():
     # Get parameters from request
     data = request.json
     search_url = data.get('search_url', '')
-    max_jobs = int(data.get('max_jobs', 10))
-    username = data.get('username', '')
-    password = data.get('password', '')
+    max_jobs = data.get('max_jobs', 10)
+    manual_job_ids = data.get('manual_job_ids', '')
+    start_position = data.get('start_position', 0)
     
     # Start scraping in a separate thread
-    thread = threading.Thread(target=run_scraper, args=(search_url, max_jobs, username, password))
+    thread = threading.Thread(target=run_scraper, args=(search_url, max_jobs, manual_job_ids, start_position))
     thread.daemon = True
     thread.start()
     
     return jsonify({"status": "success", "message": "Scraping started"})
 
-def run_scraper(search_url, max_jobs, username, password):
+def run_scraper(search_url, max_jobs, manual_job_ids='', start_position=0):
     """Run the LinkedIn scraper with the provided parameters"""
     try:
         # Import the connector module
@@ -110,8 +110,6 @@ def run_scraper(search_url, max_jobs, username, password):
         connector = LinkedInConnector(
             search_url=search_url,
             max_jobs=max_jobs,
-            username=username,
-            password=password,
             log_file=log_file,
             headless=False  # Use non-headless mode for better reliability
         )
@@ -172,13 +170,33 @@ def run_scraper(search_url, max_jobs, username, password):
             # Check if job is a dictionary before using get()
             if isinstance(job, dict):
                 description = job.get('description', '').lower() if job.get('description') else ''
-                if 'aws' in description or 'amazon' in description:
+                
+                # Check for AWS/Amazon cloud services
+                if 'aws' in description or 'amazon' in description or \
+                   any(keyword in description for keyword in ['ec2', 's3', 'lambda', 'dynamodb', 'rds', 
+                                                            'cloudformation', 'cloudwatch', 'iam', 'eks', 'sagemaker',
+                                                            'cloudfront', 'route53', 'sns', 'sqs', 'fargate']):
                     scraping_results["cloud_mentions"]["aws"] += 1
-                if 'azure' in description or 'microsoft' in description:
+                
+                # Check for Azure cloud services
+                if 'azure' in description or 'microsoft azure' in description or \
+                   any(keyword in description for keyword in ['azure vm', 'azure functions', 'azure storage', 
+                                                            'cosmos db', 'azure sql', 'azure devops', 
+                                                            'azure kubernetes', 'aks', 'azure active directory',
+                                                            'azure logic apps', 'azure app service']):
                     scraping_results["cloud_mentions"]["azure"] += 1
-                if 'gcp' in description or 'google cloud' in description:
+                
+                # Check for Google Cloud Platform services
+                if 'gcp' in description or 'google cloud' in description or \
+                   any(keyword in description for keyword in ['bigquery', 'cloud storage', 'compute engine', 
+                                                            'cloud functions', 'dataflow', 'cloud spanner', 
+                                                            'gke', 'cloud run', 'dataproc', 'pub/sub']):
                     scraping_results["cloud_mentions"]["gcp"] += 1
-                if 'alibaba' in description or 'alicloud' in description or 'alipay' in description or '阿里' in description:
+                
+                # Check for Alibaba Cloud services
+                if 'alibaba' in description or 'alicloud' in description or 'alipay' in description or '阿里' in description or \
+                   any(keyword in description for keyword in ['ecs', 'oss', 'maxcompute', 'tablestore', 
+                                                            'polardb', 'sls', 'odps', 'datav', 'pai']):
                     scraping_results["cloud_mentions"]["alibaba"] += 1
             elif isinstance(job, str):
                 # If job is a string, log the issue and continue
