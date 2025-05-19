@@ -6,7 +6,54 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
 
 *Screenshot: LinkedIn Job Scraper Introduction Page*
 
-## Setup and Usage
+## Installation Options
+
+You have two ways to use this project:
+
+### Option 1: Use Pre-compiled Binary (Recommended)
+
+For users who want a quick start without setting up a development environment:
+
+#### For Mac Users:
+1. **Download the pre-compiled binary**
+   - Navigate to the `dist` folder
+   - Run the `LinkedIn_Job_Scraper` executable directly
+   ```bash
+   cd "path/to/LinkedIn/dist"
+   ./LinkedIn_Job_Scraper
+   ```
+   - If you get a permission error, make the file executable:
+   ```bash
+   chmod +x LinkedIn_Job_Scraper
+   ./LinkedIn_Job_Scraper
+   ```
+   - The application will start and be accessible at http://localhost:5001
+   
+2. **Mac-specific Troubleshooting**
+   - If macOS blocks the application due to security settings, go to System Preferences > Security & Privacy and allow the application to run
+   - If you see "app is damaged and can't be opened" message, try running:
+   ```bash
+   xattr -d com.apple.quarantine LinkedIn_Job_Scraper
+   ```
+
+#### For Windows Users:
+1. **Note: Windows executable currently not available**
+   - The project currently only includes a Mac binary
+   - Windows users should follow Option 2 (Set Up Development Environment) below
+   - If you need a Windows executable, you'll need to build it yourself using PyInstaller on a Windows machine:
+   ```cmd
+   pip install pyinstaller
+   pyinstaller pyinstaller_build.spec
+   ```
+   - The resulting .exe file will be in the `dist` folder
+
+#### General Troubleshooting:
+- If Chrome doesn't launch when clicking "Start Scraping", ensure Chrome is installed on your system
+- If you encounter any persistent issues with the pre-compiled version, try Option 2 below
+
+### Option 2: Set Up Development Environment
+
+For developers or if you need to customize the application:
 
 1. **Installation**
    ```bash
@@ -16,27 +63,40 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
    # Move to the current directory
    cd Linkedin
 
-   # Run the setup script
-   chmod +x run_scraper.sh
-   ./run_scraper.sh
+   # Install dependencies
+   pip install -r requirements.txt
+   
+   # Make sure you have Selenium 4.x installed (important!)
+   pip install --upgrade selenium
    ```
 
-2. **Opening the Web Interface**
+2. **Running the Application**
    ```bash
-   # In the console, run the python file to redirect to the webpage
-   "python app.py"
+   # Run the Flask application
+   python app.py
+   
    # Open your browser and navigate to http://localhost:5001
-   http://localhost:5001
    ```
 
-3. **Using the Web Interface**
-   # read the instruction page and move to the job scraper page
+3. **Building Your Own Binary (Optional)**
+   ```bash
+   # Install PyInstaller if you don't have it
+   pip install pyinstaller
+   
+   # Build the application
+   pyinstaller pyinstaller_build.spec
+   ```
+
+## Using the Web Interface
+
+1. **Getting Started**
+   - Read the instruction page and navigate to the job scraper page
    - Enter a LinkedIn job search URL
-   - Provide your LinkedIn credentials
    - Click "Start Scraping"
    - If LinkedIn requires verification, complete it in the browser window
-   # view the results & analysis
-   - View and Download results when scraping is complete (scroll down to the bottom to download the csv)
+
+2. **Viewing Results & Analysis**
+   - View and download results when scraping is complete (scroll down to the bottom to download the CSV)
    - See the plots in the analysis tab
 
    ![Results Data Table](example_result/Example_linkedIn_job%20scraper_result_page02.png)
@@ -93,12 +153,12 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
 
 ## System Requirements
 
-- Python 3.6+
+- Python 3.6+ (Python 3.8 recommended for binary compilation)
 - Chrome browser
-- Required Python packages (installed automatically by run_scraper.sh):
+- Required Python packages (installed via requirements.txt):
   - flask
   - pandas
-  - selenium
+  - selenium (version 4.x required)
   - webdriver-manager
   - beautifulsoup4
   - requests
@@ -145,9 +205,15 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
    - LinkedIn may rate-limit or block scraping attempts
    - The tool implements delays and anti-detection measures, but may still be detected
 
+3. **Selenium Version Compatibility**
+   - The application requires Selenium 4.x for proper functioning
+   - If you encounter an error like `__init__() got an unexpected keyword argument 'options'`, it indicates a Selenium version compatibility issue
+   - Solution: Ensure you're using Selenium 4.x by running `pip install --upgrade selenium` before packaging or running the application
+
 ## Disclaimer
 
 This tool is for research purposes only. Use of this tool may violate LinkedIn's Terms of Service. Users are responsible for ensuring their use complies with all applicable terms of service, laws, and regulations.
+
 ## Example Results
 
 The `example_result` directory contains sample outputs from the LinkedIn Job Scraper:
