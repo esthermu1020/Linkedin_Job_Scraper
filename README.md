@@ -16,10 +16,10 @@ For users who want a quick start without setting up a development environment:
 
 #### For Mac Users:
 1. **Download the pre-compiled binary**
-   - Navigate to the `dist` folder
-   - Run the `LinkedIn_Job_Scraper` executable directly
+   - Download using the Google Drive https://drive.google.com/file/d/1S7s_tjodfZ7ARH9OvkBxlAFbhsmfJGuf/view?usp=drive_link 
+   - Locate to the directory where you have the file. Then run the `LinkedIn_Job_Scraper` executable directly
    ```bash
-   cd "path/to/LinkedIn/dist"
+   cd Downloads/
    ./LinkedIn_Job_Scraper
    ```
    - If you get a permission error, make the file executable:
