@@ -46,3 +46,4 @@ config.json
 
 # Temporary files
 temp_results.csv
+dist.tar.gz
