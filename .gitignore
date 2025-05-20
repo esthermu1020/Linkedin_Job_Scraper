@@ -7,7 +7,7 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
+# dist/ (removed to allow uploading dist directory)
 downloads/
 eggs/
 .eggs/
