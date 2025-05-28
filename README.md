@@ -48,7 +48,7 @@ For users who want a quick start without setting up a development environment:
 
 #### For Windows Users:
 1. **Download the pre-compiled binary**
-   - Download the Windows executable from Google Drive: https://drive.google.com/drive/folders/1H_J2EyuzeTyYCkmCe90GaOG3VW4R1Y5L?dmr=1&ec=wgc-drive-hero-goto
+   - Download the Windows executable from Google Drive: https://drive.google.com/file/d/1zOpHYe32312cVqw3LGJvFZWK_rVmLtdz/view?usp=sharing
    - Extract the ZIP file if necessary
    - Double-click the `LinkedIn_Job_Scraper.exe` file to run the application
    - The application will start and be accessible at http://localhost:5001
@@ -59,14 +59,6 @@ For users who want a quick start without setting up a development environment:
      2. Click "Run anyway" to proceed
    - If you see any DLL errors, make sure you have the latest Microsoft Visual C++ Redistributable installed
    - For Chrome driver issues, ensure Chrome browser is installed on your system
-   - The project currently only includes a Mac binary
-   - Windows users should follow Option 2 (Set Up Development Environment) below
-   - If you need a Windows executable, you'll need to build it yourself using PyInstaller on a Windows machine:
-   ```cmd
-   pip install pyinstaller
-   pyinstaller pyinstaller_build.spec
-   ```
-   - The resulting .exe file will be in the `dist` folder
 
 #### General Troubleshooting:
 - If Chrome doesn't launch when clicking "Start Scraping", ensure Chrome is installed on your system
