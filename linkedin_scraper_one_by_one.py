@@ -872,32 +872,33 @@ def get_job_details(driver, job_ids):
             job_is_msft = []
             job_is_google = []
             job_is_alibaba = []
+            job_is_oracle = []
+            job_is_cloud = []
             
-            # Process each sentence in the description
-            sentences = description.split('\n')
+            import re
+
+            # Split by common sentence/phrase delimiters: newline, comma, semicolon, period, colon, dash
+            sentences = re.split(r'[\n,.;:\-–—]+', description)
+            sentences = [s.strip() for s in sentences if s.strip()]  # Remove empty sentences
+            
             for sentence in sentences:
                 # For Amazon/AWS, exclude sentences that contain "laws" to avoid false positives
-<<<<<<< HEAD
                 # Check for AWS/Amazon cloud services - using more specific matching
                 sentence_lower = sentence.lower()
                 words = re.findall(r'\b\w+\b', sentence_lower)
                 
                 # Amazon/AWS check with more specific context
-                if ('aws' in words or 'amazon' in words and 'laws' not in words) or \
-                   ('amazon' in sentence_lower and any(cloud_term in sentence_lower for cloud_term in ['cloud', 'web services'])):
-                    # Check for AWS specific services with word boundaries
+                if ('aws' in words or 'amazon' in words or "alexa" in words and 'laws' not in words):
+                    job_is_amazon.append(sentence)
+                else:
+                    # Check for AWS specific services with better context
                     aws_services = ['ec2', 's3', 'lambda', 'dynamodb', 'rds', 'cloudformation', 'cloudwatch', 
-                                   'iam', 'eks', 'sagemaker', 'cloudfront', 'route53', 'sns', 'sqs', 'fargate']
+                                   'iam', 'eks', 'sagemaker', 'cloudfront', 'route53', 'redshift', 'sqs', 'fargate']
                     if any(f" {service} " in f" {sentence_lower} " for service in aws_services):
                         job_is_amazon.append(sentence)
-                
+
                 # Check for Azure cloud services - more specific matching
                 if 'azure' in words or 'microsoft azure' in sentence_lower:
-=======
-                if ('aws' in sentence.lower() or 'amazon' in sentence.lower()) and 'laws' not in sentence.lower():
-                    job_is_amazon.append(sentence)
-                if 'azure' in sentence.lower() or 'microsoft' in sentence.lower():
->>>>>>> 3e5e43268b990fb05fba7b8a6e4a70c4fead79b8
                     job_is_msft.append(sentence)
                 else:
                     # Check for Azure specific services with better context
@@ -939,7 +940,19 @@ def get_job_details(driver, job_ids):
                         # Only classify if there's clear Alibaba context
                         if any(term in sentence_lower for term in ['alibaba', 'aliyun', 'alicloud', 'china cloud']):
                             job_is_alibaba.append(sentence)
-            
+
+                # Check for Oracle Cloud services - more specific matching
+                if 'oracle cloud' in sentence_lower or 'oci' in words:
+                    job_is_oracle.append(sentence)
+                else:
+                    # Check for Oracle Cloud specific services with better context
+                    oracle_services = ['oracle cloud infrastructure', 'oci', 'oracle database', 'oracle applications']
+                    if any(service in sentence_lower for service in oracle_services):
+                        job_is_oracle.append(sentence)
+                # Check for general cloud mentions
+                if 'cloud' in words and not any(term in sentence_lower for term in ['aws', 'azure', 'google', 'alibaba', 'oracle']):
+                    job_is_cloud.append(sentence)
+
             # Update log messages to be more accurate with our improved classification
             if job_is_amazon:
                 logger.info(f"Found {len(job_is_amazon)} sentences with confirmed AWS/Amazon cloud references")
@@ -949,6 +962,10 @@ def get_job_details(driver, job_ids):
                 logger.info(f"Found {len(job_is_google)} sentences with confirmed Google Cloud Platform references")
             if job_is_alibaba:
                 logger.info(f"Found {len(job_is_alibaba)} sentences with confirmed Alibaba Cloud references")
+            if job_is_oracle:
+                logger.info(f"Found {len(job_is_oracle)} sentences with confirmed Oracle Cloud references")
+            if job_is_cloud:
+                logger.info(f"Found {len(job_is_cloud)} sentences with general cloud references (not specific to any CSP)")
             
             # Save job details
             job_details.append({
@@ -961,8 +978,23 @@ def get_job_details(driver, job_ids):
                 'Job_IS_Amazon': job_is_amazon,
                 'Job_IS_MSFT': job_is_msft,
                 'Job_IS_Google': job_is_google,
-                'Job_IS_Alibaba': job_is_alibaba
+                'Job_IS_Alibaba': job_is_alibaba,
+                'Job_IS_Oracle': job_is_oracle,
+                'Job_IS_Cloud': job_is_cloud,
             })
+
+            # add country infered from location
+            country = location.split(',')[-1].strip() if ',' in location else 'Unknown'
+            job_details[-1]['country'] = country
+
+            # add a column where job_is_amazon, job_is_msft, job_is_google, job_is_alibaba, job_is_oracle are joined as a string
+            job_details[-1]['Job_IS_Any_CSP'] = ', '.join([
+                'Amazon' if job_is_amazon else '',
+                'Microsoft Azure' if job_is_msft else '',
+                'Google Cloud' if job_is_google else '',
+                'Alibaba Cloud' if job_is_alibaba else '',
+                'Oracle Cloud' if job_is_oracle else ''
+            ]).strip(', ')
             
             # Add random delay to avoid detection
             time.sleep(random.uniform(2, 3))

@@ -8,6 +8,10 @@ A web-based tool for scraping and analyzing job listings from LinkedIn, with a f
 
 ## Installation Options
 
+### Pre-requisite: 
+* You must have Google Chrome installed in your laptop
+* You must have a Linkedin Account
+
 You have two ways to use this project:
 
 ### Option 1: Use Pre-compiled Binary (Recommended)
@@ -17,12 +21,13 @@ For users who want a quick start without setting up a development environment:
 #### For Mac Users:
 1. **Download the pre-compiled binary**
    - Download using the Google Drive https://drive.google.com/file/d/1S7s_tjodfZ7ARH9OvkBxlAFbhsmfJGuf/view?usp=drive_link 
-   - Locate to the directory where you have the file. Then run the `LinkedIn_Job_Scraper` executable directly
+   - Locate to the directory where you have the file. Then run the `LinkedIn_Job_Scraper` executable directly. If you downloaded the file to your Downloads directory, then
    ```bash
    cd Downloads/
    ./LinkedIn_Job_Scraper
    ```
-   - If you get a permission error, make the file executable:
+   - You may encounter error "Apple cannot verify the app", please follow the 2. **Mac-specific Troubleshooting** to grant it access.
+   - You may also encounter a permission error, to make the file executable, run the following code
    ```bash
    chmod +x LinkedIn_Job_Scraper
    ./LinkedIn_Job_Scraper
@@ -30,14 +35,30 @@ For users who want a quick start without setting up a development environment:
    - The application will start and be accessible at http://localhost:5001
    
 2. **Mac-specific Troubleshooting**
-   - If macOS blocks the application due to security settings, go to System Preferences > Security & Privacy and allow the application to run
+   - If you see a message that Apple cannot verify the app:
+     1. Try to open the application, you'll see a warning message
+     2. Click on the Apple menu in the top-left corner and select "System Settings" (or "System Preferences")
+     3. Go to "Privacy & Security" or "Security & Privacy"
+     4. In the "Security" section, you'll see a message indicating the app was blocked
+     5. Click the "Open Anyway" button, then click "Open" in the confirmation dialog
    - If you see "app is damaged and can't be opened" message, try running:
    ```bash
    xattr -d com.apple.quarantine LinkedIn_Job_Scraper
    ```
 
 #### For Windows Users:
-1. **Note: Windows executable currently not available**
+1. **Download the pre-compiled binary**
+   - Download the Windows executable from Google Drive: https://drive.google.com/drive/folders/1H_J2EyuzeTyYCkmCe90GaOG3VW4R1Y5L?dmr=1&ec=wgc-drive-hero-goto
+   - Extract the ZIP file if necessary
+   - Double-click the `LinkedIn_Job_Scraper.exe` file to run the application
+   - The application will start and be accessible at http://localhost:5001
+
+2. **Windows-specific Troubleshooting**
+   - If Windows Defender SmartScreen blocks the application:
+     1. Click "More info" in the warning dialog
+     2. Click "Run anyway" to proceed
+   - If you see any DLL errors, make sure you have the latest Microsoft Visual C++ Redistributable installed
+   - For Chrome driver issues, ensure Chrome browser is installed on your system
    - The project currently only includes a Mac binary
    - Windows users should follow Option 2 (Set Up Development Environment) below
    - If you need a Windows executable, you'll need to build it yourself using PyInstaller on a Windows machine:

@@ -173,9 +173,8 @@ def run_scraper(search_url, max_jobs, manual_job_ids='', start_position=0):
                 
                 # Check for AWS/Amazon cloud services
                 if 'aws' in description or 'amazon' in description or \
-                   any(keyword in description for keyword in ['ec2', 's3', 'lambda', 'dynamodb', 'rds', 
-                                                            'cloudformation', 'cloudwatch', 'iam', 'eks', 'sagemaker',
-                                                            'cloudfront', 'route53', 'sns', 'sqs', 'fargate']):
+                   any(keyword in description for keyword in [' ec2 ', ' s3 ', 'lambda', 'dynamodb',  'cloudwatch', 'sagemaker',
+                                                            'cloudfront', 'bedrock', 'redshift', 'cloudformation',]):
                     scraping_results["cloud_mentions"]["aws"] += 1
                 
                 # Check for Azure cloud services
@@ -188,15 +187,13 @@ def run_scraper(search_url, max_jobs, manual_job_ids='', start_position=0):
                 
                 # Check for Google Cloud Platform services
                 if 'gcp' in description or 'google cloud' in description or \
-                   any(keyword in description for keyword in ['bigquery', 'cloud storage', 'compute engine', 
-                                                            'cloud functions', 'dataflow', 'cloud spanner', 
-                                                            'gke', 'cloud run', 'dataproc', 'pub/sub']):
+                   any(keyword in description for keyword in ['bigquery', 'dataflow', 'cloud spanner', 
+                                                            'looker', 'cloud run', 'dataproc', 'pub/sub']):
                     scraping_results["cloud_mentions"]["gcp"] += 1
                 
                 # Check for Alibaba Cloud services
                 if 'alibaba' in description or 'alicloud' in description or 'alipay' in description or '阿里' in description or \
-                   any(keyword in description for keyword in ['ecs', 'oss', 'maxcompute', 'tablestore', 
-                                                            'polardb', 'sls', 'odps', 'datav', 'pai']):
+                   any(keyword in description for keyword in ['maxcompute', 'tablestore', 'polardb', 'datav']):
                     scraping_results["cloud_mentions"]["alibaba"] += 1
             elif isinstance(job, str):
                 # If job is a string, log the issue and continue
@@ -285,11 +282,11 @@ def generate_analysis():
             print("No 'location' column found in job data")
         
         # 3. Extract common skills from job descriptions
-        skill_keywords = ['python', 'java', 'javascript', 'aws', 'azure', 'gcp', 'sql', 'nosql', 
-            'react', 'angular', 'vue', 'node', 'docker', 'kubernetes', 'terraform',
-            'ci/cd', 'devops', 'agile', 'scrum', 'machine learning', 'ai', 'data science',
-            'cloud', 'microservices', 'rest api', 'graphql', 'git', 'linux', 'windows',
-            'full stack', 'frontend', 'backend', 'database', 'security', 'networking']
+        skill_keywords = ['aws', 'azure', 'gcp', 'alibaba', 'python', 'java', 'javascript', 'sql', 'redshift', 'bigquery',
+                           'redshift', 'snowflake', 'spark', 'hadoop', 'docker', 'kubernetes', 'terraform','datav', 'databricks',
+                           'claude', 'llama', 'bedrock', 'sagemaker', 'gpt', 'chatgpt', 'openai', 'deep learning', 'vertex', 'openai',
+                           'elasticsearch', 'kibana', 'prometheus', 'grafana', 'splunk', 'tableau', 'power bi', 'looker', 'power bi',
+                           'maxcompute', 'tablestore', 'polardb', 'dataworks', 'data lake', 'glue']
         
         # Check if description column exists
         if 'description' in df.columns:
@@ -334,8 +331,8 @@ def generate_analysis():
                         company_words = re.findall(r'\b[a-zA-Z]{3,15}\b', company_text)
                         company_word_counts = Counter(company_words)
                         company_word_freq = {}
-                        for word, count in company_word_counts.most_common(50):
-                            if word not in stop_words and len(word) > 2:
+                        for word, count in company_word_counts.most_common(100):
+                            if word not in stop_words:
                                 company_word_freq[word] = count
                         company_data[company] = company_word_freq
             
