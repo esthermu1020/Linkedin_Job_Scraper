@@ -314,18 +314,25 @@ def login_to_linkedin(driver, email, password):
 class LinkedInConnector:
     """Class to connect the LinkedIn scraper with the web interface"""
     
-    def __init__(self, search_url='', max_jobs=10, log_file=None, headless=False):
+    def __init__(self, search_url='', max_jobs=10, start_position=0, manual_job_ids='', log_file=None, headless=False):
         """Initialize the connector with the given parameters"""
         self.search_url = search_url
         self.max_jobs = max_jobs
+        self.start_position = int(start_position) if start_position else 0  # Ensure start_position is an integer
+        self.manual_job_ids = manual_job_ids
         self.log_file = log_file
         self.headless = headless
+        self.email = None
+        self.password = None
+        self.logger = logger
     
     def run(self):
         """Run the scraper and return the results"""
         return run_scraper(
             search_url=self.search_url,
             max_jobs=self.max_jobs,
+            start_position=self.start_position,
+            manual_job_ids=self.manual_job_ids,
             headless=self.headless
         )
     
@@ -347,6 +354,9 @@ def run_scraper(search_url, max_jobs='all', start_position=0, manual_job_ids='',
     """
     # Create a global variable to store the log filename so it can be accessed from outside
     global log_filename
+    
+    # Ensure start_position is an integer
+    start_position = int(start_position) if start_position else 0
     
     results = {
         "status": "running",
@@ -437,11 +447,13 @@ def run_scraper(search_url, max_jobs='all', start_position=0, manual_job_ids='',
                 from linkedin_scraper_one_by_one import collect_job_ids_one_by_one
                 
                 # Create a wrapper function to update logs during collection
-                def collect_with_logging(driver, search_url, max_jobs):
+                def collect_with_logging(driver, search_url, max_jobs, start_position=start_position):
                     job_ids = []
                     collected_ids = set()
-                    start_position = 0
-                    max_attempts = 200
+                    # Ensure start_position is an integer
+                    start_position = int(start_position) if start_position else 0
+                    add_log(f"Starting collection from position {start_position}")
+                    max_attempts = 2000
                     consecutive_failures = 0
                     max_consecutive_failures = 5
                     

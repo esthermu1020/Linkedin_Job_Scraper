@@ -152,12 +152,12 @@ def collect_job_ids_one_by_one(driver, search_url, max_jobs=float('inf'), start=
     """
     job_ids = []
     collected_ids = set()  # For checking duplicate IDs
-    start_position = start  # Start from the specified position
-    max_attempts = 200  # Maximum number of attempts, can be adjusted based on expected job count
+    start_position = int(start)  # Start from the specified position, ensure it's an integer
+    max_attempts = 2000  # Maximum number of attempts, can be adjusted based on expected job count
     consecutive_failures = 0  # Count of consecutive failures
     max_consecutive_failures = 5  # Maximum consecutive failures before assuming we've reached the end
     
-    logger.info(f"Starting to collect job IDs one by one, max collection: {max_jobs if max_jobs != float('inf') else 'unlimited'}")
+    logger.info(f"Starting to collect job IDs one by one, max collection: {max_jobs if max_jobs != float('inf') else 'unlimited'}, starting from position {start_position}")
     
     while len(job_ids) < max_jobs and start_position < max_attempts and consecutive_failures < max_consecutive_failures:
         try:
@@ -456,6 +456,9 @@ def get_job_details(driver, job_ids):
             
             # Try direct approach first - this is the most reliable for the specific job structure
             try:
+                # Import re module locally to avoid "local variable 're' referenced before assignment" error
+                import re
+                
                 # Wait for the job description to load
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, ".jobs-description"))

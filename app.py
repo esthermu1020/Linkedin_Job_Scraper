@@ -85,7 +85,7 @@ def start_scraping():
     search_url = data.get('search_url', '')
     max_jobs = data.get('max_jobs', 10)
     manual_job_ids = data.get('manual_job_ids', '')
-    start_position = data.get('start_position', 0)
+    start_position = int(data.get('start_position', 0))  # Ensure start_position is an integer
     
     # Start scraping in a separate thread
     thread = threading.Thread(target=run_scraper, args=(search_url, max_jobs, manual_job_ids, start_position))
@@ -110,6 +110,8 @@ def run_scraper(search_url, max_jobs, manual_job_ids='', start_position=0):
         connector = LinkedInConnector(
             search_url=search_url,
             max_jobs=max_jobs,
+            start_position=start_position,  # Pass the start_position parameter
+            manual_job_ids=manual_job_ids,
             log_file=log_file,
             headless=False  # Use non-headless mode for better reliability
         )
