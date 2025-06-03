@@ -7,7 +7,7 @@ __pycache__/
 env/
 build/
 develop-eggs/
-# dist/ (removed to allow uploading dist directory)
+dist/
 downloads/
 eggs/
 .eggs/
@@ -47,3 +47,36 @@ config.json
 # Temporary files
 temp_results.csv
 dist.tar.gz
+
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Mac OS
+.DS_Store
+
+# Credentials and sensitive data
+*.pem
+*.key
+credentials.json
+config.json
+
+# Temporary files
+temp_results.csv
+dist.tar.gz
+
+# Large files
+dist/LinkedIn_Job_Scraper
+build/pyinstaller_build/LinkedIn_Job_Scraper.pkg
+linkedin-repo.git/

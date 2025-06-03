@@ -16,6 +16,17 @@ import re
 import base64
 from io import BytesIO
 import numpy as np
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 
@@ -119,6 +130,48 @@ def run_scraper(search_url, max_jobs, manual_job_ids='', start_position=0):
         # Run the scraper
         job_results = connector.run()
         
+        # Check if we need to continue collecting more jobs
+        if isinstance(job_results, dict) and "jobs" in job_results:
+            actual_jobs = job_results["jobs"]
+            # 确保max_jobs是整数
+            try:
+                max_jobs_int = int(max_jobs)
+                if len(actual_jobs) < max_jobs_int:
+                    logger.info(f"Only collected {len(actual_jobs)} jobs, target was {max_jobs_int}. Trying again...")
+                    # Try up to 3 more times to collect more jobs
+                    for attempt in range(5):  # 增加到5次尝试
+                        logger.info(f"Additional collection attempt {attempt+1}/5")
+                        # Continue from where we left off
+                        new_start = int(start_position) + len(actual_jobs)
+                        connector = LinkedInConnector(
+                            search_url=search_url,
+                            max_jobs=max_jobs_int - len(actual_jobs),
+                            start_position=new_start,
+                            manual_job_ids=manual_job_ids,
+                            log_file=log_file,
+                            headless=False
+                        )
+                        additional_results = connector.run()
+                        
+                        # Merge results
+                        if isinstance(additional_results, dict) and "jobs" in additional_results:
+                            additional_jobs = additional_results.get("jobs", [])
+                            if additional_jobs:  # Check if not empty
+                                actual_jobs.extend(additional_jobs)
+                                logger.info(f"Now have {len(actual_jobs)} jobs after additional collection")
+                                if len(actual_jobs) >= max_jobs_int:
+                                    logger.info(f"Reached target of {max_jobs_int} jobs, stopping collection")
+                                    break
+                            else:
+                                logger.warning("Additional collection returned empty jobs list")
+                        else:
+                            logger.warning("Additional collection attempt failed")
+            except ValueError:
+                logger.warning(f"Could not convert max_jobs '{max_jobs}' to integer for comparison")
+                
+            # Update job_results with the combined results
+            job_results["jobs"] = actual_jobs
+        
         # Debug information
         print(f"Type of job_results: {type(job_results)}")
         print(f"Length of job_results: {len(job_results) if hasattr(job_results, '__len__') else 'N/A'}")
@@ -128,6 +181,9 @@ def run_scraper(search_url, max_jobs, manual_job_ids='', start_position=0):
             # If job_results is a dictionary with a "jobs" key, use that
             print("Using job_results['jobs'] as the actual job data")
             actual_jobs = job_results["jobs"]
+            if actual_jobs is None:
+                print("Warning: job_results['jobs'] is None, creating empty list")
+                actual_jobs = []
             scraping_results["status"] = "completed"
             scraping_results["message"] = f"Completed scraping {len(actual_jobs)} jobs"
             scraping_results["job_count"] = len(actual_jobs)
@@ -170,6 +226,9 @@ def run_scraper(search_url, max_jobs, manual_job_ids='', start_position=0):
         
         for job in jobs_to_process:
             # Check if job is a dictionary before using get()
+            if job is None:
+                continue
+                
             if isinstance(job, dict):
                 description = job.get('description', '').lower() if job.get('description') else ''
                 

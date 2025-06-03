@@ -153,11 +153,17 @@ def collect_job_ids_one_by_one(driver, search_url, max_jobs=float('inf'), start=
     job_ids = []
     collected_ids = set()  # For checking duplicate IDs
     start_position = int(start)  # Start from the specified position, ensure it's an integer
-    max_attempts = 2000  # Maximum number of attempts, can be adjusted based on expected job count
+    max_attempts = 5000  # Maximum number of attempts, increased for more thorough collection
     consecutive_failures = 0  # Count of consecutive failures
-    max_consecutive_failures = 5  # Maximum consecutive failures before assuming we've reached the end
+    max_consecutive_failures = 30  # Increased maximum consecutive failures to be more persistent
+    retry_count = 0  # Count retries for the same position
+    max_retries_per_position = 3  # Maximum retries for the same position
+    
+    # 关闭唯一性检查，允许重复的job ID
+    allow_duplicates = True
     
     logger.info(f"Starting to collect job IDs one by one, max collection: {max_jobs if max_jobs != float('inf') else 'unlimited'}, starting from position {start_position}")
+    logger.info(f"Duplicate job IDs are {'allowed' if allow_duplicates else 'not allowed'}")
     
     while len(job_ids) < max_jobs and start_position < max_attempts and consecutive_failures < max_consecutive_failures:
         try:
@@ -201,23 +207,55 @@ def collect_job_ids_one_by_one(driver, search_url, max_jobs=float('inf'), start=
                 logger.warning(f"No job card found at start={start_position}")
                 consecutive_failures += 1
                 logger.info(f"Consecutive failures: {consecutive_failures}/{max_consecutive_failures}")
-                start_position += 1
+                
+                # Try again at the same position if we haven't reached max retries
+                if retry_count < max_retries_per_position:
+                    retry_count += 1
+                    logger.info(f"Retrying position {start_position} (attempt {retry_count}/{max_retries_per_position})")
+                    time.sleep(2)  # Wait a bit before retrying
+                    continue
+                else:
+                    # Reset retry count and move to next position
+                    retry_count = 0
+                    start_position += 1
                 continue
             
             # Click on job card
             logger.info("Attempting to click job card")
-            try:
-                driver.execute_script("arguments[0].click();", job_card)
-                logger.info("JavaScript click successful")
-            except:
+            click_success = False
+            click_attempts = 0
+            max_click_attempts = 3
+            
+            while not click_success and click_attempts < max_click_attempts:
                 try:
-                    job_card.click()
-                    logger.info("Regular click successful")
+                    driver.execute_script("arguments[0].click();", job_card)
+                    logger.info("JavaScript click successful")
+                    click_success = True
                 except:
-                    logger.error("Click failed")
-                    consecutive_failures += 1
-                    start_position += 1
+                    try:
+                        job_card.click()
+                        logger.info("Regular click successful")
+                        click_success = True
+                    except:
+                        click_attempts += 1
+                        logger.warning(f"Click attempt {click_attempts} failed, retrying...")
+                        time.sleep(1)
+            
+            if not click_success:
+                logger.error("All click attempts failed")
+                consecutive_failures += 1
+                
+                # Try again at the same position if we haven't reached max retries
+                if retry_count < max_retries_per_position:
+                    retry_count += 1
+                    logger.info(f"Retrying position {start_position} due to click failure (attempt {retry_count}/{max_retries_per_position})")
+                    time.sleep(2)  # Wait a bit before retrying
                     continue
+                else:
+                    # Reset retry count and move to next position
+                    retry_count = 0
+                    start_position += 1
+                continue
             
             # Wait for page update
             time.sleep(3)
@@ -241,26 +279,53 @@ def collect_job_ids_one_by_one(driver, search_url, max_jobs=float('inf'), start=
                 else:
                     logger.warning(f"Could not extract job ID from URL: {current_url}")
                     consecutive_failures += 1
-                    start_position += 1
+                    
+                    # Try again at the same position if we haven't reached max retries
+                    if retry_count < max_retries_per_position:
+                        retry_count += 1
+                        logger.info(f"Retrying position {start_position} due to missing job ID (attempt {retry_count}/{max_retries_per_position})")
+                        time.sleep(2)  # Wait a bit before retrying
+                        continue
+                    else:
+                        # Reset retry count and move to next position
+                        retry_count = 0
+                        start_position += 1
                     continue
             
             # Check if this is a new job ID
-            if job_id and job_id not in collected_ids:
-                collected_ids.add(job_id)
-                job_ids.append(job_id)
-                consecutive_failures = 0  # Reset consecutive failures counter
-                logger.info(f"Collected new job ID: {job_id} (total: {len(job_ids)})")
-                
-                # Save to file every 10 job IDs
-                if len(job_ids) % 10 == 0:
-                    with open("job_ids_one_by_one.txt", "w") as f:
-                        for id in job_ids:
-                            f.write("{}\n".format(id))
-                    logger.info(f"Saved {len(job_ids)} job IDs to job_ids_one_by_one.txt")
-            else:
-                if job_id in collected_ids:
-                    logger.warning(f"Detected duplicate job ID: {job_id}")
-                consecutive_failures += 1
+            if job_id:
+                # 如果允许重复，或者是新的job ID
+                if allow_duplicates or job_id not in collected_ids:
+                    if job_id in collected_ids:
+                        logger.info(f"Duplicate job ID: {job_id} - but duplicates are allowed")
+                    
+                    collected_ids.add(job_id)
+                    job_ids.append(job_id)
+                    consecutive_failures = 0  # Reset consecutive failures counter
+                    retry_count = 0  # Reset retry counter on success
+                    logger.info(f"Collected job ID: {job_id} (total: {len(job_ids)})")
+                    
+                    # Save to file every 10 job IDs
+                    if len(job_ids) % 10 == 0:
+                        with open("job_ids_one_by_one.txt", "w") as f:
+                            for id in job_ids:
+                                f.write("{}\n".format(id))
+                        logger.info(f"Saved {len(job_ids)} job IDs to job_ids_one_by_one.txt")
+                else:
+                    if job_id in collected_ids:
+                        logger.warning(f"Detected duplicate job ID: {job_id} - skipping")
+                    consecutive_failures += 1
+                    
+                    # Try again at the same position if we haven't reached max retries
+                    if retry_count < max_retries_per_position:
+                        retry_count += 1
+                        logger.info(f"Retrying position {start_position} due to duplicate job ID (attempt {retry_count}/{max_retries_per_position})")
+                        time.sleep(2)  # Wait a bit before retrying
+                        continue
+                    else:
+                        # Reset retry count and move to next position
+                        retry_count = 0
+                        start_position += 1
             
             # Add random delay to avoid detection
             time.sleep(random.uniform(1, 2))
@@ -268,8 +333,21 @@ def collect_job_ids_one_by_one(driver, search_url, max_jobs=float('inf'), start=
         except Exception as e:
             logger.error(f"Error processing job item: {e}")
             consecutive_failures += 1
+            
+            # Try again at the same position if we haven't reached max retries
+            if retry_count < max_retries_per_position:
+                retry_count += 1
+                logger.info(f"Retrying position {start_position} due to error (attempt {retry_count}/{max_retries_per_position})")
+                time.sleep(2)  # Wait a bit before retrying
+                continue
+            else:
+                # Reset retry count and move to next position
+                retry_count = 0
+                start_position += 1
+                logger.info(f"Moving to next job item, start = {start_position}")
         
-        # Increment start value regardless of success or failure, move to next job item
+        # If we've reached this point and haven't continued the loop, move to next position
+        retry_count = 0  # Reset retry counter
         start_position += 1
         logger.info(f"Moving to next job item, start = {start_position}")
     

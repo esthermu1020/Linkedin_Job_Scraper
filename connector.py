@@ -435,7 +435,11 @@ def run_scraper(search_url, max_jobs='all', start_position=0, manual_job_ids='',
         # Proceed with scraping
         if login_success:
             # Convert max_jobs to the appropriate type
-            max_jobs_value = float('inf') if max_jobs == 'all' else int(max_jobs)
+            try:
+                max_jobs_value = float('inf') if max_jobs == 'all' else int(max_jobs)
+            except (ValueError, TypeError):
+                add_log(f"Warning: Could not convert max_jobs '{max_jobs}' to integer, using infinity", "warning")
+                max_jobs_value = float('inf')
             
             # Collect job IDs
             job_ids = []
@@ -494,23 +498,47 @@ def run_scraper(search_url, max_jobs='all', start_position=0, manual_job_ids='',
                             if not job_card:
                                 add_log(f"⚠️ No job card found at position {start_position}", "warning")
                                 consecutive_failures += 1
+                                
+                                # Try again at the same position up to 3 times
+                                if consecutive_failures < 3:
+                                    add_log(f"Retrying the same position (attempt {consecutive_failures}/3)...")
+                                    continue
+                                
                                 start_position += 1
                                 continue
                             
                             # Click on job card
                             add_log(f"Clicking on job card...")
-                            try:
-                                driver.execute_script("arguments[0].click();", job_card)
-                                add_log(f"Click successful using JavaScript")
-                            except:
+                            click_success = False
+                            click_attempts = 0
+                            max_click_attempts = 3
+                            
+                            while not click_success and click_attempts < max_click_attempts:
                                 try:
-                                    job_card.click()
-                                    add_log(f"Click successful using Selenium")
+                                    driver.execute_script("arguments[0].click();", job_card)
+                                    add_log(f"Click successful using JavaScript")
+                                    click_success = True
                                 except:
-                                    add_log("⚠️ Click failed on job card", "warning")
-                                    consecutive_failures += 1
-                                    start_position += 1
+                                    try:
+                                        job_card.click()
+                                        add_log(f"Click successful using Selenium")
+                                        click_success = True
+                                    except:
+                                        click_attempts += 1
+                                        add_log(f"Click attempt {click_attempts} failed, retrying...")
+                                        time.sleep(1)
+                            
+                            if not click_success:
+                                add_log("⚠️ All click attempts failed on job card", "warning")
+                                consecutive_failures += 1
+                                
+                                # Try again at the same position up to 3 times
+                                if consecutive_failures < 3:
+                                    add_log(f"Retrying the same position due to click failure (attempt {consecutive_failures}/3)...")
                                     continue
+                                
+                                start_position += 1
+                                continue
                             
                             # Wait for page update
                             time.sleep(3)
@@ -594,13 +622,25 @@ def run_scraper(search_url, max_jobs='all', start_position=0, manual_job_ids='',
                 add_log(f"Starting to process {len(job_ids)} job IDs...")
                 
                 # Call the original function to get job details
-                job_details = get_job_details(driver, job_ids)
+                try:
+                    job_details = get_job_details(driver, job_ids)
+                    if job_details is None:
+                        add_log("Warning: get_job_details returned None", "warning")
+                        job_details = []
+                except Exception as e:
+                    add_log(f"Error in get_job_details: {str(e)}", "error")
+                    job_details = []
                 
                 add_log(f"✓ Job details collection complete! Processed {len(job_details)} jobs")
                 return job_details
             
             # Use our wrapper around the original function
             job_details = get_job_details_with_logs(driver, job_ids)
+            
+            # Ensure job_details is not None
+            if job_details is None:
+                add_log("❌ Job details collection returned None. Creating empty list.", "error")
+                job_details = []
             
             # Process results
             results["jobs"] = job_details
@@ -609,6 +649,9 @@ def run_scraper(search_url, max_jobs='all', start_position=0, manual_job_ids='',
             # Count cloud mentions
             add_log("📊 Analyzing cloud provider mentions...")
             for job in job_details:
+                if job is None:
+                    continue
+                    
                 if isinstance(job, dict):  # Make sure job is a dictionary
                     if job.get('Job_IS_Amazon') and len(job.get('Job_IS_Amazon', [])) > 0:
                         results["cloud_mentions"]["aws"] += 1
